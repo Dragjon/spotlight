@@ -2051,8 +2051,8 @@ function drawRadar(id, data) {
 
   ctx.clearRect(0,0,W,H);
 
-  // grid
-  for (let ring = 1; ring <= 4; ring++) {
+  // Filled grid rings
+  for (let ring = 4; ring >= 1; ring--) {
     ctx.beginPath();
     for (let i = 0; i < N; i++) {
       const a = i * angleStep - Math.PI/2;
@@ -2061,21 +2061,26 @@ function drawRadar(id, data) {
       i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     }
     ctx.closePath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.fillStyle = `rgba(255,255,255,${0.015 * ring})`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
     ctx.stroke();
   }
 
-  // spokes
+  // Spokes
   for (let i = 0; i < N; i++) {
     const a = i * angleStep - Math.PI/2;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(a)*r, cy + Math.sin(a)*r);
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
     ctx.stroke();
   }
 
-  // data polygon
+  // Glow fill
+  ctx.save();
   ctx.beginPath();
   for (let i = 0; i < N; i++) {
     const a = i * angleStep - Math.PI/2;
@@ -2084,30 +2089,75 @@ function drawRadar(id, data) {
     i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
   }
   ctx.closePath();
-  ctx.fillStyle = 'rgba(29,185,84,0.2)';
+  ctx.shadowColor = COLORS.green;
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = 'rgba(29,185,84,0.18)';
   ctx.fill();
-  ctx.strokeStyle = COLORS.green;
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  ctx.restore();
 
-  // dots
+  // Data polygon stroke
+  ctx.beginPath();
   for (let i = 0; i < N; i++) {
     const a = i * angleStep - Math.PI/2;
     const v = clamp(vals[i], 0, 1);
     const x = cx + Math.cos(a)*r*v, y = cy + Math.sin(a)*r*v;
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = COLORS.green;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Glow stroke
+  ctx.save();
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const a = i * angleStep - Math.PI/2;
+    const v = clamp(vals[i], 0, 1);
+    const x = cx + Math.cos(a)*r*v, y = cy + Math.sin(a)*r*v;
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = COLORS.green + '55';
+  ctx.lineWidth = 8;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.restore();
+
+  // Dots with glow
+  for (let i = 0; i < N; i++) {
+    const a = i * angleStep - Math.PI/2;
+    const v = clamp(vals[i], 0, 1);
+    const x = cx + Math.cos(a)*r*v, y = cy + Math.sin(a)*r*v;
+    ctx.save();
+    ctx.shadowColor = COLORS.green;
+    ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.arc(x, y, 5, 0, Math.PI*2);
     ctx.fillStyle = COLORS.green;
+    ctx.fill();
+    ctx.restore();
+    // white center
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI*2);
+    ctx.fillStyle = '#fff';
     ctx.fill();
   }
 
-  // labels
-  ctx.fillStyle = 'rgba(240,239,232,0.7)';
-  ctx.font = '11px DM Mono, monospace';
+  // Labels
+  ctx.fillStyle = 'rgba(240,239,232,0.75)';
+  ctx.font = '11px "DM Mono", monospace';
   ctx.textAlign = 'center';
   for (let i = 0; i < N; i++) {
     const a = i * angleStep - Math.PI/2;
-    const x = cx + Math.cos(a)*(r+22), y = cy + Math.sin(a)*(r+22) + 4;
+    const x = cx + Math.cos(a)*(r+26), y = cy + Math.sin(a)*(r+26) + 4;
+    // value badge
+    ctx.fillStyle = COLORS.green + 'cc';
+    ctx.font = 'bold 10px "DM Mono", monospace';
+    ctx.fillText((vals[i]*100).toFixed(0)+'%', x, y + 14);
+    ctx.fillStyle = 'rgba(240,239,232,0.75)';
+    ctx.font = '11px "DM Mono", monospace';
     ctx.fillText(keys[i], x, y);
   }
 }
@@ -2119,52 +2169,59 @@ function drawMoodMap(songs) {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0,0,W,H);
 
-  // quadrant backgrounds
+  // Quadrant gradients
   const quads = [
-    { x:W/2, y:0, w:W/2, h:H/2, label:'Happy + Energetic', color:'rgba(29,185,84,0.05)' },
-    { x:0, y:0, w:W/2, h:H/2, label:'Angry + Turbulent', color:'rgba(255,107,53,0.05)' },
-    { x:0, y:H/2, w:W/2, h:H/2, label:'Sad + Depressed', color:'rgba(168,85,247,0.05)' },
-    { x:W/2, y:H/2, w:W/2, h:H/2, label:'Peaceful + Content', color:'rgba(56,189,248,0.05)' },
+    { x:W/2, y:0,   w:W/2, h:H/2, color:'rgba(29,185,84,0.07)',   label:'Happy + Energetic' },
+    { x:0,   y:0,   w:W/2, h:H/2, color:'rgba(255,107,53,0.07)',   label:'Angry + Turbulent' },
+    { x:0,   y:H/2, w:W/2, h:H/2, color:'rgba(168,85,247,0.07)',   label:'Sad + Depressed' },
+    { x:W/2, y:H/2, w:W/2, h:H/2, color:'rgba(56,189,248,0.07)',   label:'Peaceful + Content' },
   ];
-
   quads.forEach(q => {
     ctx.fillStyle = q.color;
     ctx.fillRect(q.x, q.y, q.w, q.h);
   });
 
-  // axes
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  // Center cross-hair axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
   ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+  ctx.setLineDash([]);
 
-  // quad labels
-  ctx.font = '9px DM Mono';
-  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  // Quad corner labels
+  ctx.font = '9px "DM Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
   ctx.textAlign = 'center';
-  ctx.fillText('Happy + Energetic', W*0.75, 14);
-  ctx.fillText('Angry + Turbulent', W*0.25, 14);
-  ctx.fillText('Sad + Depressed', W*0.25, H-6);
-  ctx.fillText('Peaceful + Content', W*0.75, H-6);
+  ctx.fillText('⚡ Happy + Energetic', W*0.75, 13);
+  ctx.fillText('🔥 Angry + Turbulent', W*0.25, 13);
+  ctx.fillText('😔 Sad + Depressed',   W*0.25, H-5);
+  ctx.fillText('☁️  Peaceful + Content', W*0.75, H-5);
 
-  // dots
+  // Dots — cluster density with subtle glow
   songs.forEach(s => {
     const v = numField(s,'Valence'), e = numField(s,'Energy');
     if (isNaN(v)||isNaN(e)) return;
     const x = v * W, y = (1-e) * H;
-    const pop = numField(s,'Popularity') || 50;
+
+    const hue = v * 120; // red→green
+    ctx.save();
+    ctx.shadowColor = `hsla(${hue},70%,60%,0.8)`;
+    ctx.shadowBlur = 6;
     ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI*2);
-    const hue = v * 120; // red→green by valence
-    ctx.fillStyle = `hsla(${hue},70%,60%,0.6)`;
+    ctx.arc(x, y, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = `hsla(${hue},75%,65%,0.7)`;
     ctx.fill();
+    ctx.restore();
   });
 
-  // axis labels
-  ctx.font = '10px DM Mono';
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.textAlign = 'left'; ctx.fillText('LOW ENERGY', 4, H/2-4);
-  ctx.textAlign = 'right'; ctx.fillText('HIGH ENERGY', W-4, H/2-4);
+  // Axis labels
+  ctx.font = '10px "DM Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'left';  ctx.fillText('▼ Low Energy',  6, H/2 - 5);
+  ctx.textAlign = 'left';  ctx.fillText('▲ High Energy', 6, H/2 + 14);
+  ctx.textAlign = 'left';  ctx.fillText('Sad →', 4, H - 16);
+  ctx.textAlign = 'right'; ctx.fillText('← Happy', W-4, H - 16);
 }
 
 // ── HISTOGRAM ──
@@ -2172,32 +2229,99 @@ function drawHistogram(canvasId, labelsId, values, bins, min, max, color, labelH
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
   const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0,0,W,H);
+  ctx.clearRect(0, 0, W, H);
+
+  const PAD = { top: 12, right: 10, bottom: 20, left: 38 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
 
   const counts = histogram(values, bins, min, max);
-  const maxCount = Math.max(...counts);
-  const barW = W / bins;
+  const maxCount = Math.max(...counts, 1);
+  const barW = chartW / bins;
 
-  counts.forEach((c, i) => {
-    const bh = (c/maxCount) * (H-20);
-    const x = i * barW;
-    const y = H - bh - 20;
+  // Gridlines + y-axis labels
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const y = PAD.top + chartH * (1 - i / yTicks);
+    const val = Math.round((maxCount * i) / yTicks);
 
-    ctx.fillStyle = color + 'cc';
+    // grid line
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
     ctx.beginPath();
-    ctx.roundRect(x+1, y, barW-2, bh, [3,3,0,0]);
+    ctx.moveTo(PAD.left, y);
+    ctx.lineTo(PAD.left + chartW, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // y label
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = `10px "DM Mono", monospace`;
+    ctx.textAlign = 'right';
+    ctx.fillText(val, PAD.left - 6, y + 3);
+  }
+
+  // Y-axis line
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top);
+  ctx.lineTo(PAD.left, PAD.top + chartH);
+  ctx.stroke();
+
+  // Bars with gradient + glow
+  counts.forEach((c, i) => {
+    if (c === 0) return;
+    const bh = (c / maxCount) * chartH;
+    const x = PAD.left + i * barW;
+    const y = PAD.top + chartH - bh;
+
+    // glow behind bar
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = color + 'aa';
+    ctx.beginPath();
+    ctx.roundRect(x + 1.5, y, barW - 3, bh, [3, 3, 0, 0]);
+    ctx.fill();
+    ctx.restore();
+
+    // bar gradient
+    const grad = ctx.createLinearGradient(0, y, 0, y + bh);
+    grad.addColorStop(0, color + 'ff');
+    grad.addColorStop(1, color + '55');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x + 1.5, y, barW - 3, bh, [3, 3, 0, 0]);
+    ctx.fill();
+
+    // top highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.roundRect(x + 1.5, y, barW - 3, Math.min(3, bh), [3, 3, 0, 0]);
     ctx.fill();
   });
+
+  // Baseline
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top + chartH);
+  ctx.lineTo(PAD.left + chartW, PAD.top + chartH);
+  ctx.stroke();
 
   // x-axis labels
   const labelsEl = document.getElementById(labelsId);
   if (labelsEl) {
-    const step = (max-min)/4;
+    const step = (max - min) / 4;
     labelsEl.innerHTML = '';
+    labelsEl.style.paddingLeft = PAD.left + 'px';
     for (let i = 0; i <= 4; i++) {
       const span = document.createElement('span');
-      const v = min + i*step;
+      const v = min + i * step;
       span.textContent = v % 1 === 0 ? v.toFixed(0) : v.toFixed(1);
       labelsEl.appendChild(span);
     }
@@ -2316,31 +2440,94 @@ function buildYearChart(songs) {
 
   const canvas = document.getElementById('year-canvas');
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height - 20;
-  ctx.clearRect(0,0,W, canvas.height);
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
 
-  const vals = years.map(y=>counts[y]);
-  const maxV = Math.max(...vals);
-  const barW = W / years.length;
+  const PAD = { top: 14, right: 10, bottom: 22, left: 40 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
 
-  years.forEach((y,i) => {
-    const bh = (counts[y]/maxV) * H;
-    const x = i*barW, yy = H-bh;
-    const gradient = ctx.createLinearGradient(0,yy,0,H);
+  const vals = years.map(y => counts[y]);
+  const maxV = Math.max(...vals, 1);
+  const barW = chartW / years.length;
+
+  // Y-axis gridlines + labels
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const y = PAD.top + chartH * (1 - i / yTicks);
+    const val = Math.round((maxV * i) / yTicks);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, y);
+    ctx.lineTo(PAD.left + chartW, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '10px "DM Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(val, PAD.left - 6, y + 3);
+  }
+
+  // Y-axis line
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top);
+  ctx.lineTo(PAD.left, PAD.top + chartH);
+  ctx.stroke();
+
+  // Bars
+  years.forEach((y, i) => {
+    const bh = (counts[y] / maxV) * chartH;
+    const x = PAD.left + i * barW;
+    const yy = PAD.top + chartH - bh;
+
+    // glow
+    ctx.save();
+    ctx.shadowColor = COLORS.green;
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = COLORS.green + '55';
+    ctx.beginPath();
+    ctx.roundRect(x + 1, yy, barW - 2, bh, [2, 2, 0, 0]);
+    ctx.fill();
+    ctx.restore();
+
+    // gradient bar
+    const gradient = ctx.createLinearGradient(0, yy, 0, yy + bh);
     gradient.addColorStop(0, COLORS.green);
-    gradient.addColorStop(1, COLORS.blue);
+    gradient.addColorStop(0.6, COLORS.blue + 'cc');
+    gradient.addColorStop(1, COLORS.blue + '44');
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.roundRect(x+1, yy, barW-2, bh, [2,2,0,0]);
+    ctx.roundRect(x + 1, yy, barW - 2, bh, [2, 2, 0, 0]);
+    ctx.fill();
+
+    // top highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.beginPath();
+    ctx.roundRect(x + 1, yy, barW - 2, Math.min(3, bh), [2, 2, 0, 0]);
     ctx.fill();
   });
 
-  // labels
+  // Baseline
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top + chartH);
+  ctx.lineTo(PAD.left + chartW, PAD.top + chartH);
+  ctx.stroke();
+
+  // X labels
   const labelsEl = document.getElementById('year-labels');
   if (labelsEl) {
     labelsEl.innerHTML = '';
-    const showEvery = Math.ceil(years.length / 8);
-    years.forEach((y,i) => {
+    labelsEl.style.paddingLeft = PAD.left + 'px';
+    const showEvery = Math.ceil(years.length / 10);
+    years.forEach((y, i) => {
       const span = document.createElement('span');
       span.textContent = i % showEvery === 0 ? y : '';
       labelsEl.appendChild(span);
@@ -2748,60 +2935,96 @@ function drawEvoChart(features, months) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const PAD = { top: 20, right: 20, bottom: 30, left: 40 };
+  const PAD = { top: 20, right: 20, bottom: 30, left: 44 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
   ctx.clearRect(0, 0, W, H);
 
-  // Grid lines
+  // Grid lines + y-axis labels
   for (let i = 0; i <= 4; i++) {
     const y = PAD.top + chartH * (1 - i / 4);
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
     ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.font = '10px DM Mono';
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.font = '10px "DM Mono", monospace';
     ctx.textAlign = 'right';
-    ctx.fillText((i * 25) + '%', PAD.left - 4, y + 4);
+    ctx.fillText((i * 25) + '%', PAD.left - 6, y + 4);
   }
 
-  // X grid (monthly ticks)
+  // Y-axis line
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top + chartH); ctx.stroke();
+
+  // X grid
   const showEvery = Math.max(1, Math.ceil(months.length / 12));
   months.forEach((m, i) => {
     if (i % showEvery === 0) {
       const x = PAD.left + (i / (months.length - 1)) * chartW;
       ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.setLineDash([2,4]);
       ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + chartH); ctx.stroke();
+      ctx.setLineDash([]);
     }
   });
 
-  // Draw lines
+  // Baseline
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top+chartH); ctx.lineTo(PAD.left+chartW, PAD.top+chartH); ctx.stroke();
+
+  // Draw lines with gradient fill + glow
   features.filter(f => f.active).forEach(f => {
+    const pts = f.values.map((v, i) => ({
+      x: PAD.left + (i / Math.max(1, months.length - 1)) * chartW,
+      y: PAD.top + chartH * (1 - v)
+    }));
+
+    // Fill under line
+    const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + chartH);
+    grad.addColorStop(0, f.color + '30');
+    grad.addColorStop(1, f.color + '00');
     ctx.beginPath();
-    f.values.forEach((v, i) => {
-      const x = PAD.left + (i / Math.max(1, months.length - 1)) * chartW;
-      const y = PAD.top + chartH * (1 - v);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.lineTo(pts[pts.length-1].x, PAD.top + chartH);
+    ctx.lineTo(pts[0].x, PAD.top + chartH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Glow line
+    ctx.save();
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.strokeStyle = f.color + '55';
+    ctx.lineWidth = 7;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = f.color;
+    ctx.shadowBlur = 12;
+    ctx.stroke();
+    ctx.restore();
+
+    // Main line
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
     ctx.strokeStyle = f.color;
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'round';
     ctx.stroke();
 
-    // Glow
-    ctx.save();
-    ctx.strokeStyle = f.color + '44';
-    ctx.lineWidth = 6;
-    ctx.stroke();
-    ctx.restore();
-
     // End dot
-    const lastX = PAD.left + ((months.length - 1) / Math.max(1, months.length - 1)) * chartW;
-    const lastY = PAD.top + chartH * (1 - f.values[f.values.length - 1]);
+    const last = pts[pts.length-1];
+    ctx.save();
+    ctx.shadowColor = f.color;
+    ctx.shadowBlur = 10;
     ctx.beginPath();
-    ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+    ctx.arc(last.x, last.y, 4, 0, Math.PI*2);
     ctx.fillStyle = f.color;
     ctx.fill();
+    ctx.restore();
   });
 }
 
@@ -2810,14 +3033,33 @@ function drawSingleEvoLine(canvasId, labelsId, months, values, color, label) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const PAD = { top: 16, right: 16, bottom: 20, left: 36 };
+  const PAD = { top: 16, right: 16, bottom: 20, left: 40 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
   ctx.clearRect(0, 0, W, H);
 
+  // Grid
+  for (let i = 0; i <= 2; i++) {
+    const y = PAD.top + chartH * (1 - i / 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.font = '9px "DM Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText((i * 50) + '%', PAD.left - 5, y + 3);
+  }
+
+  // Y-axis
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top+chartH); ctx.stroke();
+
   // gradient fill under line
   const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + chartH);
-  grad.addColorStop(0, color + '33');
+  grad.addColorStop(0, color + '40');
   grad.addColorStop(1, color + '00');
 
   ctx.beginPath();
@@ -2826,15 +3068,29 @@ function drawSingleEvoLine(canvasId, labelsId, months, values, color, label) {
     const y = PAD.top + chartH * (1 - v);
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
-  // close path for fill
-  const lastX2 = PAD.left + chartW, firstX2 = PAD.left;
-  ctx.lineTo(lastX2, PAD.top + chartH);
-  ctx.lineTo(firstX2, PAD.top + chartH);
+  ctx.lineTo(PAD.left + chartW, PAD.top + chartH);
+  ctx.lineTo(PAD.left, PAD.top + chartH);
   ctx.closePath();
   ctx.fillStyle = grad;
   ctx.fill();
 
-  // line
+  // Glow line
+  ctx.save();
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = PAD.left + (i / Math.max(1, months.length - 1)) * chartW;
+    const y = PAD.top + chartH * (1 - v);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color + '55';
+  ctx.lineWidth = 7;
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.restore();
+
+  // Main line
   ctx.beginPath();
   values.forEach((v, i) => {
     const x = PAD.left + (i / Math.max(1, months.length - 1)) * chartW;
@@ -2842,23 +3098,20 @@ function drawSingleEvoLine(canvasId, labelsId, months, values, color, label) {
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
   ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
   ctx.stroke();
 
-  // y axis labels
-  for (let i = 0; i <= 2; i++) {
-    const y = PAD.top + chartH * (1 - i / 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.font = '9px DM Mono';
-    ctx.textAlign = 'right';
-    ctx.fillText((i * 50) + '%', PAD.left - 4, y + 3);
-  }
+  // Baseline
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top+chartH); ctx.lineTo(PAD.left+chartW, PAD.top+chartH); ctx.stroke();
 
   // x labels
   const xLabels = document.getElementById(labelsId);
   if (xLabels) {
     xLabels.innerHTML = '';
+    xLabels.style.paddingLeft = PAD.left + 'px';
     const showEvery = Math.max(1, Math.ceil(months.length / 6));
     months.forEach((m, i) => {
       const sp = document.createElement('span');
@@ -2873,7 +3126,7 @@ function buildPopEvolution(byMonth, months) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const PAD = { top: 16, right: 16, bottom: 20, left: 40 };
+  const PAD = { top: 16, right: 16, bottom: 20, left: 44 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
   ctx.clearRect(0, 0, W, H);
@@ -2886,50 +3139,75 @@ function buildPopEvolution(byMonth, months) {
   const mainstreamSeries = months.map(m => byMonth[m].filter(s => parseFloat(s['Popularity']) >= 70).length / byMonth[m].length * 100);
   const undergroundSeries = months.map(m => byMonth[m].filter(s => parseFloat(s['Popularity']) < 40).length / byMonth[m].length * 100);
 
-  // Draw as bar chart (mainstream/underground stacked) + avg popularity line
   const barW = chartW / months.length;
-  const maxVal = 100;
 
+  // Grid + y-axis
+  for (let i = 0; i <= 2; i++) {
+    const y = PAD.top + chartH * (1 - i / 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.font = '9px "DM Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(i * 50, PAD.left - 5, y + 3);
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top+chartH); ctx.stroke();
+
+  // Stacked bars
   months.forEach((m, i) => {
     const x = PAD.left + i * barW;
-    const mh = (mainstreamSeries[i] / maxVal) * chartH;
-    const uh = (undergroundSeries[i] / maxVal) * chartH;
+    const mh = (mainstreamSeries[i] / 100) * chartH;
+    const uh = (undergroundSeries[i] / 100) * chartH;
 
-    // mainstream bar
     ctx.fillStyle = COLORS.purple + '55';
-    ctx.fillRect(x + 1, PAD.top + chartH - mh, barW - 2, mh);
+    ctx.fillRect(x + 0.5, PAD.top + chartH - mh, barW - 1, mh);
 
-    // underground bar (stacked on mainstream, below zero line)
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.fillRect(x + 1, PAD.top + chartH - mh - uh, barW - 2, uh);
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fillRect(x + 0.5, PAD.top + chartH - mh - uh, barW - 1, uh);
   });
 
-  // avg popularity line (0-100 scale)
+  // avg popularity line
   const filled = avgPopSeries.map((v, i, a) => v !== null ? v : (a[i-1] ?? a[i+1] ?? 50));
+  const pts = filled.map((v, i) => ({
+    x: PAD.left + (i + 0.5) * barW,
+    y: PAD.top + chartH * (1 - v / 100)
+  }));
+
+  // Glow
+  ctx.save();
   ctx.beginPath();
-  filled.forEach((v, i) => {
-    const x = PAD.left + (i + 0.5) * barW;
-    const y = PAD.top + chartH * (1 - v / 100);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
+  pts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle = COLORS.green + '55';
+  ctx.lineWidth = 7;
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = COLORS.green;
+  ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.beginPath();
+  pts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
   ctx.strokeStyle = COLORS.green;
   ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round';
   ctx.stroke();
 
-  // y axis
-  for (let i = 0; i <= 2; i++) {
-    const y = PAD.top + chartH * (1 - i / 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.font = '9px DM Mono';
-    ctx.textAlign = 'right';
-    ctx.fillText(i * 50, PAD.left - 4, y + 3);
-  }
+  // Baseline
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top+chartH); ctx.lineTo(PAD.left+chartW, PAD.top+chartH); ctx.stroke();
 
   // x labels
   const xLabels = document.getElementById('pop-evo-labels');
   if (xLabels) {
     xLabels.innerHTML = '';
+    xLabels.style.paddingLeft = PAD.left + 'px';
     const showEvery = Math.max(1, Math.ceil(months.length / 8));
     months.forEach((m, i) => {
       const sp = document.createElement('span');
@@ -3300,49 +3578,104 @@ function buildListeningHabits(songs) {
   const dowCanvas = document.getElementById('dow-canvas');
   if (dowCanvas) {
     const ctx = dowCanvas.getContext('2d');
-    const W = dowCanvas.width, H = dowCanvas.height - 20;
-    const maxV = Math.max(...dowCounts);
-    const bw = W / 7;
-    ctx.clearRect(0, 0, W, dowCanvas.height);
-    dowCounts.forEach((v, i) => {
-      const bh = (v / maxV) * H;
-      const x = i * bw;
-      const grad = ctx.createLinearGradient(0, H - bh, 0, H);
-      grad.addColorStop(0, '#38bdf8');
-      grad.addColorStop(1, '#1db954');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.roundRect(x+3, H-bh, bw-6, bh, [3,3,0,0]); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.font = '10px DM Mono, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(DAYS[i], x + bw/2, H + 14);
-      if (v === maxV) {
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = 'bold 10px DM Mono, monospace';
-        ctx.fillText(v, x + bw/2, H - bh - 4);
-      }
+    const W = dowCanvas.width, H = dowCanvas.height;
+    const PAD = { top: 12, right: 6, bottom: 20, left: 36 };
+    const chartW = W - PAD.left - PAD.right;
+    const chartH = H - PAD.top - PAD.bottom;
+    const maxV = Math.max(...dowCounts, 1);
+    const bw = chartW / 7;
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid + y-axis
+    [0, 0.5, 1].forEach(t => {
+      const y = PAD.top + chartH * (1 - t);
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = '9px "DM Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(Math.round(maxV * t), PAD.left - 5, y + 3);
     });
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top + chartH); ctx.stroke();
+
+    dowCounts.forEach((v, i) => {
+      const bh = (v / maxV) * chartH;
+      const x = PAD.left + i * bw;
+      const isMax = v === maxV;
+
+      ctx.save();
+      ctx.shadowColor = isMax ? '#38bdf8' : 'rgba(56,189,248,0.4)';
+      ctx.shadowBlur = isMax ? 14 : 4;
+      const grad = ctx.createLinearGradient(0, PAD.top + chartH - bh, 0, PAD.top + chartH);
+      grad.addColorStop(0, isMax ? '#38bdf8' : '#38bdf888');
+      grad.addColorStop(1, isMax ? '#1db954' : '#1db95444');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.roundRect(x + 3, PAD.top + chartH - bh, bw - 6, bh, [3,3,0,0]); ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '10px "DM Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(DAYS[i], x + bw/2, PAD.top + chartH + 14);
+    });
+
+    // Baseline
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top+chartH); ctx.lineTo(PAD.left+chartW, PAD.top+chartH); ctx.stroke();
   }
 
   // Draw month-of-year
   const moyCanvas = document.getElementById('moy-canvas');
   if (moyCanvas) {
     const ctx = moyCanvas.getContext('2d');
-    const W = moyCanvas.width, H = moyCanvas.height - 20;
-    const maxV = Math.max(...moyCounts);
-    const bw = W / 12;
-    ctx.clearRect(0, 0, W, moyCanvas.height);
-    moyCounts.forEach((v, i) => {
-      const bh = (v / maxV) * H;
-      const x = i * bw;
-      const hue = (i / 12) * 120 + 140;
-      ctx.fillStyle = `hsl(${hue},60%,55%)`;
-      ctx.beginPath(); ctx.roundRect(x+2, H-bh, bw-4, bh, [3,3,0,0]); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.45)';
-      ctx.font = '9px DM Mono, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(MONTHS[i], x + bw/2, H + 14);
+    const W = moyCanvas.width, H = moyCanvas.height;
+    const PAD = { top: 12, right: 6, bottom: 20, left: 36 };
+    const chartW = W - PAD.left - PAD.right;
+    const chartH = H - PAD.top - PAD.bottom;
+    const maxV = Math.max(...moyCounts, 1);
+    const bw = chartW / 12;
+    ctx.clearRect(0, 0, W, H);
+
+    [0, 0.5, 1].forEach(t => {
+      const y = PAD.top + chartH * (1 - t);
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = '9px "DM Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(Math.round(maxV * t), PAD.left - 5, y + 3);
     });
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top + chartH); ctx.stroke();
+
+    moyCounts.forEach((v, i) => {
+      const bh = (v / maxV) * chartH;
+      const x = PAD.left + i * bw;
+      const hue = (i / 12) * 120 + 140;
+
+      ctx.save();
+      ctx.shadowColor = `hsl(${hue},60%,55%)`;
+      ctx.shadowBlur = 8;
+      const grad = ctx.createLinearGradient(0, PAD.top + chartH - bh, 0, PAD.top + chartH);
+      grad.addColorStop(0, `hsl(${hue},65%,60%)`);
+      grad.addColorStop(1, `hsl(${hue},40%,35%)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.roundRect(x + 2, PAD.top + chartH - bh, bw - 4, bh, [3,3,0,0]); ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.font = '9px "DM Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(MONTHS[i], x + bw/2, PAD.top + chartH + 14);
+    });
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top+chartH); ctx.lineTo(PAD.left+chartW, PAD.top+chartH); ctx.stroke();
   }
 
   // Streak stats
