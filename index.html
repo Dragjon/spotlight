@@ -1,0 +1,3022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VELVET — Know Your Sound</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #11111a;
+    --bg3: #1a1a2e;
+    --panel: #13131f;
+    --border: rgba(255,255,255,0.07);
+    --accent: #1db954;
+    --accent2: #ff6b35;
+    --accent3: #a855f7;
+    --accent4: #38bdf8;
+    --text: #f0efe8;
+    --muted: #6b6b7a;
+    --card-glow: rgba(29,185,84,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+
+  /* ── UPLOAD SCREEN ── */
+  #upload-screen {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 32px;
+  }
+
+  .upload-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .upload-sub {
+    color: var(--muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .drop-zone {
+    width: min(480px, 90vw);
+    border: 2px dashed rgba(29,185,84,0.4);
+    border-radius: 16px;
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(29,185,84,0.03);
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(29,185,84,0.08);
+    transform: scale(1.01);
+  }
+
+  .drop-icon {
+    font-size: 3rem; margin-bottom: 16px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+
+  .drop-text { font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
+  .drop-sub { font-size: 0.75rem; color: var(--muted); }
+
+  #file-input { display: none; }
+
+  .use-sample-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); padding: 10px 24px;
+    border-radius: 99px; cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem; letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .use-sample-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── MAIN APP ── */
+  #app { display: none; position: relative; z-index: 1; }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 60px 40px 40px;
+    max-width: 1400px; margin: 0 auto;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px; flex-wrap: wrap;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(3rem, 7vw, 7rem);
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 0.9;
+  }
+
+  .hero-title span {
+    display: block;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent4) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .hero-meta { text-align: right; }
+  .hero-meta .big-num {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 700; color: var(--accent);
+  }
+  .hero-meta .label { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.1em; }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 40px 80px; }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title svg, .section-title i { vertical-align: middle; }
+
+  /* ── STAT CARDS ROW ── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 40px;
+  }
+
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 20px;
+    position: relative; overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent-line, var(--accent));
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat-card .val {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem; font-weight: 700;
+    color: var(--text); line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-card .lbl {
+    font-size: 0.7rem; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  .stat-card .sub {
+    font-size: 0.75rem; color: var(--accent);
+    margin-top: 8px; font-family: 'DM Mono', monospace;
+  }
+
+  /* ── GRID LAYOUTS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 32px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px; }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
+    .hero { padding: 40px 20px 20px; }
+    .container { padding: 0 20px 60px; }
+  }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .panel-title .icon { font-size: 1.1rem; }
+
+  /* ── BAR CHART ── */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 50px;
+    gap: 10px; align-items: center;
+    font-size: 0.72rem;
+  }
+
+  .bar-label { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .bar-track { background: rgba(255,255,255,0.05); border-radius: 4px; height: 8px; overflow: hidden; }
+
+  .bar-fill {
+    height: 100%; border-radius: 4px;
+    background: var(--bar-color, var(--accent));
+    transition: width 1s cubic-bezier(0.16,1,0.3,1);
+    width: 0;
+  }
+
+  .bar-count { color: var(--muted); text-align: right; font-size: 0.7rem; }
+
+  /* ── HORIZONTAL BAR (for audio features) ── */
+  .feature-bar {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .feat-row { display: flex; flex-direction: column; gap: 4px; }
+
+  .feat-header {
+    display: flex; justify-content: space-between;
+    font-size: 0.72rem;
+  }
+
+  .feat-name { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .feat-val { color: var(--text); font-weight: 500; }
+
+  .feat-track { background: rgba(255,255,255,0.05); border-radius: 4px; height: 6px; overflow: hidden; position: relative; }
+  .feat-fill { height: 100%; border-radius: 4px; transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
+
+  /* ── RADAR / SPIDER ── */
+  .radar-wrap { display: flex; justify-content: center; align-items: center; padding: 10px 0; }
+
+  /* ── SCATTER ── */
+  .scatter-wrap { position: relative; }
+  canvas { border-radius: 8px; }
+
+  /* ── TIMELINE ── */
+  .timeline { display: flex; flex-direction: column; gap: 2px; }
+
+  .tl-month {
+    display: grid;
+    grid-template-columns: 80px 1fr 30px;
+    gap: 8px; align-items: center;
+    font-size: 0.7rem;
+  }
+
+  .tl-label { color: var(--muted); }
+
+  .tl-bar-wrap { background: rgba(255,255,255,0.04); border-radius: 3px; height: 22px; overflow: hidden; }
+
+  .tl-bar {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent4));
+    transition: width 1s cubic-bezier(0.16,1,0.3,1);
+    width: 0;
+    display: flex; align-items: center; padding-left: 8px;
+    font-size: 0.65rem; color: var(--bg); font-weight: 600;
+    white-space: nowrap; overflow: hidden;
+  }
+
+  .tl-count { color: var(--muted); text-align: right; }
+
+  /* ── TOP TRACKS TABLE ── */
+  .track-list { display: flex; flex-direction: column; gap: 1px; }
+
+  .track-item {
+    display: grid;
+    grid-template-columns: 28px 1fr 60px 60px;
+    gap: 12px; align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    font-size: 0.78rem;
+  }
+
+  .track-item:hover { background: rgba(255,255,255,0.04); }
+
+  .track-num { color: var(--muted); font-size: 0.7rem; text-align: right; }
+
+  .track-info .name { color: var(--text); line-height: 1.3; font-size: 0.78rem; }
+  .track-info .artist { color: var(--muted); font-size: 0.68rem; margin-top: 1px; }
+
+  .track-pop {
+    text-align: right; font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+  }
+
+  .pop-badge {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 99px;
+    font-size: 0.65rem; font-weight: 500;
+  }
+
+  /* ── DONUT ── */
+  .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+  .donut-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center; }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── KEY WHEEL ── */
+  .key-wheel { display: flex; flex-wrap: wrap; gap: 8px; }
+  .key-chip {
+    padding: 6px 12px; border-radius: 99px;
+    font-size: 0.72rem; border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    display: flex; gap: 8px; align-items: center;
+    transition: all 0.2s;
+  }
+  .key-chip:hover { border-color: var(--accent); }
+  .key-name { color: var(--text); }
+  .key-cnt { color: var(--accent); font-size: 0.65rem; }
+
+  /* ── BUBBLE CHART ── */
+  .bubble-wrap { position: relative; height: 300px; }
+
+  /* ── HEATMAP ── */
+  .heatmap-wrap { overflow-x: auto; }
+  .heatmap-grid { display: grid; gap: 3px; }
+  .hm-cell {
+    width: 28px; height: 28px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; color: rgba(255,255,255,0.4);
+    cursor: default; transition: transform 0.15s;
+  }
+  .hm-cell:hover { transform: scale(1.2); }
+
+  /* ── DIVIDER ── */
+  .section-divider { height: 40px; }
+
+  /* ── SCROLL ANIMATIONS ── */
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* ── TOOLTIP ── */
+  .tooltip {
+    position: fixed; pointer-events: none;
+    background: rgba(10,10,15,0.95);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+    font-size: 0.72rem; color: var(--text);
+    z-index: 999; display: none;
+    max-width: 220px;
+  }
+
+  /* ── ACCENT COLORS FOR CARDS ── */
+  .accent-green { --accent-line: var(--accent); }
+  .accent-orange { --accent-line: var(--accent2); }
+  .accent-purple { --accent-line: var(--accent3); }
+  .accent-blue { --accent-line: var(--accent4); }
+
+  /* ── GENRE CLOUD ── */
+  .genre-cloud { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .genre-tag {
+    padding: 4px 12px; border-radius: 99px;
+    border: 1px solid;
+    font-size: 0.75rem;
+    transition: all 0.2s; cursor: default;
+  }
+
+  /* ── INSIGHT CARDS ── */
+  .insights { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .insight-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .insight-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid var(--border); }
+  .insight-text .title { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+  .insight-text .body { font-size: 0.75rem; color: var(--muted); line-height: 1.6; }
+  .insight-text .highlight { color: var(--accent); }
+
+  /* ── BPM HISTOGRAM ── */
+  .histogram { display: flex; align-items: flex-end; gap: 3px; height: 100px; }
+  .hist-bar {
+    flex: 1; background: var(--accent);
+    border-radius: 3px 3px 0 0;
+    opacity: 0.7; transition: opacity 0.2s, height 1s cubic-bezier(0.16,1,0.3,1);
+    cursor: default; position: relative;
+  }
+  .hist-bar:hover { opacity: 1; }
+  .hist-labels { display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--muted); margin-top: 6px; }
+
+  /* ── MOOD MATRIX ── */
+  .mood-matrix {
+    position: relative;
+    width: 100%; aspect-ratio: 1;
+    max-width: 320px; margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .mood-axis-label {
+    position: absolute; font-size: 0.6rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .mood-dot {
+    position: absolute;
+    width: 8px; height: 8px; border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform 0.2s;
+    cursor: default;
+  }
+  .mood-dot:hover { transform: translate(-50%, -50%) scale(2); z-index: 10; }
+
+  /* ── LOADING ── */
+  .loading {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; padding: 60px;
+    color: var(--muted); font-size: 0.8rem;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── ARCHETYPE ACTIONS ── */
+  .archetype-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-top: 24px;
+  }
+
+  .arch-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: 99px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem; letter-spacing: 0.04em;
+    cursor: pointer; border: none;
+    transition: all 0.2s; white-space: nowrap;
+  }
+
+  .arch-btn-primary {
+    background: var(--accent); color: #000; font-weight: 600;
+  }
+  .arch-btn-primary:hover { background: #1ed760; transform: scale(1.03); }
+
+  .arch-btn-secondary {
+    background: rgba(255,255,255,0.08); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .arch-btn-secondary:hover { background: rgba(255,255,255,0.14); }
+
+  .arch-btn-ghost {
+    background: none; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .arch-btn-ghost:hover { border-color: var(--accent3); color: var(--accent3); }
+
+  /* ── ARCHETYPE MODAL ── */
+  .arch-modal-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+    backdrop-filter: blur(6px);
+  }
+
+  .arch-modal-overlay.open {
+    opacity: 1; pointer-events: all;
+  }
+
+  .arch-modal {
+    background: #16161f;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    width: min(740px, 94vw);
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 32px;
+    transform: translateY(20px);
+    transition: transform 0.25s;
+  }
+
+  .arch-modal-overlay.open .arch-modal {
+    transform: translateY(0);
+  }
+
+  .arch-modal-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .arch-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  .arch-card {
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid;
+    cursor: default;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .arch-card:hover { transform: translateY(-2px); }
+
+  .arch-card.is-you::before {
+    content: 'YOU';
+    position: absolute; top: 12px; right: 12px;
+    background: var(--accent); color: #000;
+    font-size: 0.55rem; font-weight: 700;
+    letter-spacing: 0.15em; padding: 2px 8px;
+    border-radius: 99px;
+  }
+
+  .arch-card-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+  }
+
+  .arch-card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .arch-card-desc {
+    font-size: 0.7rem; color: var(--muted);
+    line-height: 1.65;
+  }
+
+  .arch-card-traits {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .arch-trait-chip {
+    font-size: 0.6rem;
+    padding: 3px 9px; border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ── SHARE TOAST ── */
+  .share-toast {
+    position: fixed; bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a1a2e;
+    border: 1px solid rgba(29,185,84,0.3);
+    border-radius: 99px;
+    padding: 12px 22px;
+    font-size: 0.8rem;
+    color: var(--text);
+    display: flex; align-items: center; gap: 10px;
+    z-index: 9999;
+    transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.35s;
+    opacity: 0;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .share-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* ── LUCIDE ICON base ── */
+  i[data-lucide] {
+    display: inline-flex;
+  }
+
+  /* ── UPLOAD SCREEN LUCIDE ── */
+  .drop-icon {
+    display: flex; justify-content: center; align-items: center;
+    margin-bottom: 16px;
+  }
+
+  /* ── VELVET HERO LOGO UPDATE ── */
+  .upload-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* ── section title icon alignment ── */
+  .section-title { display: flex; align-items: center; gap: 8px; }
+  .section-title i[data-lucide] { flex-shrink: 0; }
+
+
+  /* ── FEATURE EVOLUTION LINE CHART ── */
+  .linechart-wrap { position: relative; }
+  .linechart-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 16px; }
+  .lc-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; cursor: pointer; opacity: 1; transition: opacity 0.2s; }
+  .lc-legend-item.hidden { opacity: 0.3; }
+  .lc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .lc-toggle-label { color: var(--muted); }
+
+  /* ── MUSIC PROFILE CARD ── */
+  .profile-card {
+    background: linear-gradient(135deg, #0d1a12 0%, #0f0f1f 50%, #1a0d1f 100%);
+    border: 1px solid rgba(29,185,84,0.2);
+    border-radius: 20px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .profile-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(29,185,84,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    position: relative; z-index: 1;
+  }
+
+  @media (max-width: 800px) { .profile-grid { grid-template-columns: 1fr; } }
+
+  .profile-archetype {
+    display: flex; flex-direction: column; justify-content: center;
+  }
+
+  .archetype-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(29,185,84,0.1);
+    border: 1px solid rgba(29,185,84,0.25);
+    border-radius: 99px;
+    padding: 6px 16px 6px 8px;
+    width: fit-content;
+    margin-bottom: 20px;
+  }
+  .archetype-icon { font-size: 1.4rem; }
+  .archetype-type { font-size: 0.65rem; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  .archetype-name {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #f0efe8, rgba(240,239,232,0.5));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .archetype-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 380px;
+  }
+
+  .profile-traits {
+    display: flex; flex-direction: column; gap: 14px;
+    justify-content: center;
+  }
+
+  .trait-row { display: flex; flex-direction: column; gap: 5px; }
+
+  .trait-header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.7rem;
+  }
+
+  .trait-name { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  .trait-poles { display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,255,255,0.25); }
+
+  .trait-slider {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 99px;
+    position: relative;
+    overflow: visible;
+  }
+
+  .trait-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 1.4s cubic-bezier(0.16,1,0.3,1);
+    width: 0;
+    position: relative;
+  }
+
+  .trait-fill::after {
+    content: '';
+    position: absolute; right: -1px; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: inherit;
+    box-shadow: 0 0 10px currentColor;
+  }
+
+  /* ── TASTE FINGERPRINT ── */
+  .fingerprint-section { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border); position: relative; z-index:1; }
+
+  .fingerprint-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .fp-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .fp-icon-wrap { display: flex; justify-content: center; margin-bottom: 8px; }
+  .fp-label { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .fp-value { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; }
+
+  /* ── ERA BREAKDOWN ── */
+  .era-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .era-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    position: relative; overflow: hidden;
+  }
+
+  .era-card::before {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .era-name { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+  .era-years { font-size: 0.62rem; color: var(--muted); margin-bottom: 10px; }
+  .era-count { font-size: 1.5rem; font-weight: 700; font-family: 'Syne', sans-serif; }
+  .era-pct { font-size: 0.65rem; color: var(--muted); }
+
+  /* ── EVOLUTION CHART TABS ── */
+  .chart-tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .chart-tab {
+    padding: 5px 14px; border-radius: 99px;
+    font-size: 0.68rem; letter-spacing: 0.05em;
+    border: 1px solid var(--border);
+    background: none; color: var(--muted);
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'DM Mono', monospace;
+  }
+  .chart-tab.active { background: var(--accent); border-color: var(--accent); color: #000; }
+  .chart-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+  /* ── ARTIST ERA TABLE ── */
+  .artist-era-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+  .artist-era-table th {
+    color: var(--muted); font-weight: 400; text-align: left;
+    padding: 6px 8px; border-bottom: 1px solid var(--border);
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .artist-era-table td { padding: 8px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .artist-era-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ── STREAK CALENDAR ── */
+  .streak-wrap { display: flex; gap: 3px; flex-wrap: wrap; }
+  .streak-day {
+    width: 12px; height: 12px; border-radius: 2px;
+    cursor: default; transition: transform 0.1s;
+  }
+  .streak-day:hover { transform: scale(1.4); }
+
+</style>
+</head>
+<body>
+
+<!-- Upload Screen -->
+<div id="upload-screen">
+  <div class="upload-logo">VELVET</div>
+  <div class="upload-sub">Know Your Sound</div>
+  <div class="drop-zone" id="drop-zone">
+    <div class="drop-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13" />
+  <circle cx="6" cy="18" r="3" />
+  <circle cx="18" cy="16" r="3" /></svg></div>
+    <div class="drop-text">Drop your Liked_Songs.csv here</div>
+    <div class="drop-sub" style="margin-top:8px">or click to browse</div>
+    <input type="file" id="file-input" accept=".csv">
+  </div>
+  <div style="color:var(--muted); font-size:0.7rem; text-align:center; max-width:380px; line-height:1.6">
+    Export from <strong style="color:var(--text)">Exportify / SpotiDate / Watsonbox</strong> — the CSV must include audio features columns (Danceability, Energy, Valence, etc.)
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div>
+      <div class="hero-title">
+        Your<br><span>Musical</span><br>DNA
+      </div>
+    </div>
+    <div class="hero-meta">
+      <div class="big-num" id="hero-count">0</div>
+      <div class="label">LIKED SONGS</div>
+      <div style="margin-top:16px; color:var(--muted); font-size:0.72rem;" id="hero-range"></div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- TOP STATS -->
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="7" height="9" x="3" y="3" rx="1" />
+  <rect width="7" height="5" x="14" y="3" rx="1" />
+  <rect width="7" height="9" x="14" y="12" rx="1" />
+  <rect width="7" height="5" x="3" y="16" rx="1" /></svg> Overview</div>
+    <div class="stat-row" id="stat-row"></div>
+
+    <!-- INSIGHTS -->
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+  <path d="M9 18h6" />
+  <path d="M10 22h4" /></svg> Key Insights</div>
+    <div class="insights" id="insights"></div>
+
+    <!-- TIMELINE -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+  <line x1="16" x2="16" y1="2" y2="6" />
+  <line x1="8" x2="8" y1="2" y2="6" />
+  <line x1="3" x2="21" y1="10" y2="10" />
+  <path d="M8 14h.01" />
+  <path d="M12 14h.01" />
+  <path d="M16 14h.01" />
+  <path d="M8 18h.01" />
+  <path d="M12 18h.01" />
+  <path d="M16 18h.01" /></svg> When You Save Songs</div>
+    <div class="panel reveal" id="timeline-panel">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+  <line x1="16" x2="16" y1="2" y2="6" />
+  <line x1="8" x2="8" y1="2" y2="6" />
+  <line x1="3" x2="21" y1="10" y2="10" /></svg></span> Songs Added Over Time</div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <!-- TOP ARTISTS + TOP TRACKS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <circle cx="9" cy="7" r="4" />
+  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+  <path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> Artists & Tracks</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+  <line x1="12" x2="12" y1="19" y2="22" /></svg></span> Top Artists</div>
+        <div class="bar-chart" id="artist-bars"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg></span> Most Popular Tracks</div>
+        <div class="track-list" id="top-tracks"></div>
+      </div>
+    </div>
+
+    <!-- AUDIO FEATURES -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="21" x2="14" y1="4" y2="4" />
+  <line x1="10" x2="3" y1="4" y2="4" />
+  <line x1="21" x2="12" y1="12" y2="12" />
+  <line x1="8" x2="3" y1="12" y2="12" />
+  <line x1="21" x2="16" y1="20" y2="20" />
+  <line x1="12" x2="3" y1="20" y2="20" />
+  <line x1="14" x2="14" y1="2" y2="6" />
+  <line x1="8" x2="8" y1="10" y2="14" />
+  <line x1="16" x2="16" y1="18" y2="22" /></svg> Audio Features</div>
+    <div class="grid-1-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" x2="18" y1="20" y2="10" />
+  <line x1="12" x2="12" y1="20" y2="4" />
+  <line x1="6" x2="6" y1="20" y2="14" /></svg></span> Average Profile</div>
+        <div class="feature-bar" id="audio-features"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <line x1="22" x2="18" y1="12" y2="12" />
+  <line x1="6" x2="2" y1="12" y2="12" />
+  <line x1="12" x2="12" y1="6" y2="2" />
+  <line x1="12" x2="12" y1="22" y2="18" /></svg></span> Feature Radar</div>
+        <div class="radar-wrap">
+          <canvas id="radar-canvas" width="380" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOOD MATRIX + VALENCE DIST -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+  <line x1="9" x2="9.01" y1="9" y2="9" />
+  <line x1="15" x2="15.01" y1="9" y2="9" /></svg> Mood Analysis</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg></span> Energy vs. Valence (Mood Map)</div>
+        <div style="text-align:center; margin-bottom:8px;">
+          <span style="font-size:0.65rem; color:var(--muted)">Each dot = one song</span>
+        </div>
+        <canvas id="mood-canvas" width="420" height="300" style="width:100%;cursor:crosshair;"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--muted);margin-top:6px;">
+          <span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <path d="M16 16s-1.5-2-4-2-4 2-4 2" />
+  <line x1="9" x2="9.01" y1="9" y2="9" />
+  <line x1="15" x2="15.01" y1="9" y2="9" /></svg> Sad</span><span style="display:flex;align-items:center;gap:4px">Happy <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+  <line x1="9" x2="9.01" y1="9" y2="9" />
+  <line x1="15" x2="15.01" y1="9" y2="9" /></svg></span>
+        </div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <circle cx="12" cy="12" r="6" />
+  <circle cx="12" cy="12" r="2" /></svg></span> Valence Distribution</div>
+        <canvas id="valence-canvas" width="420" height="180" style="width:100%"></canvas>
+        <div class="hist-labels" id="valence-labels"></div>
+        <div style="margin-top:20px;">
+          <div class="panel-title" style="font-size:0.85rem;"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13" />
+  <circle cx="6" cy="18" r="3" />
+  <circle cx="18" cy="16" r="3" /></svg></span> Danceability Distribution</div>
+          <canvas id="dance-canvas" width="420" height="120" style="width:100%"></canvas>
+          <div class="hist-labels" id="dance-labels"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BPM + KEY -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4" />
+  <path d="M12 18V2l7 4" /></svg> Rhythm & Key</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg></span> Tempo Distribution (BPM)</div>
+        <canvas id="tempo-canvas" width="420" height="160" style="width:100%"></canvas>
+        <div class="hist-labels" id="tempo-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13" />
+  <circle cx="6" cy="18" r="3" />
+  <circle cx="18" cy="16" r="3" /></svg></span> Keys Used</div>
+        <div class="key-wheel" id="key-wheel"></div>
+        <div style="margin-top:20px;">
+          <div style="font-size:0.7rem; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em;">Major vs Minor</div>
+          <canvas id="mode-canvas" width="300" height="30" style="width:100%"></canvas>
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem;margin-top:6px;">
+            <span style="color:var(--accent)">Major</span>
+            <span style="color:var(--accent3)">Minor</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GENRES -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+  <path d="M7 7h.01" /></svg> Genres</div>
+    <div class="grid-2-1">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+  <path d="M7 7h.01" /></svg></span> Genre Distribution</div>
+        <div class="bar-chart" id="genre-bars"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></svg></span> Genre Cloud</div>
+        <div class="genre-cloud" id="genre-cloud"></div>
+      </div>
+    </div>
+
+    <!-- RECORD LABELS + EXPLICIT -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
+  <path d="M9 22v-4h6v4" />
+  <path d="M8 6h.01" />
+  <path d="M16 6h.01" />
+  <path d="M12 6h.01" />
+  <path d="M12 10h.01" />
+  <path d="M12 14h.01" />
+  <path d="M16 10h.01" />
+  <path d="M16 14h.01" />
+  <path d="M8 10h.01" />
+  <path d="M8 14h.01" /></svg> Labels & Content</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
+  <path d="M9 22v-4h6v4" />
+  <path d="M8 6h.01" />
+  <path d="M16 6h.01" />
+  <path d="M12 6h.01" />
+  <path d="M12 10h.01" />
+  <path d="M12 14h.01" />
+  <path d="M16 10h.01" />
+  <path d="M16 14h.01" />
+  <path d="M8 10h.01" />
+  <path d="M8 14h.01" /></svg></span> Top Record Labels</div>
+        <div class="bar-chart" id="label-bars"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <line x1="12" x2="12" y1="8" y2="12" />
+  <line x1="12" x2="12.01" y1="16" y2="16" /></svg></span> Explicit Content</div>
+        <canvas id="explicit-canvas" width="300" height="300" style="max-width:200px;display:block;margin:0 auto;"></canvas>
+        <div class="donut-legend" id="explicit-legend"></div>
+        <div style="margin-top:24px;">
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Popularity Distribution</div>
+          <canvas id="pop-canvas" width="300" height="80" style="width:100%"></canvas>
+          <div class="hist-labels" id="pop-labels"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RELEASE YEARS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+  <line x1="16" x2="16" y1="2" y2="6" />
+  <line x1="8" x2="8" y1="2" y2="6" />
+  <line x1="3" x2="21" y1="10" y2="10" /></svg> Release Years</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+  <line x1="16" x2="16" y1="2" y2="6" />
+  <line x1="8" x2="8" y1="2" y2="6" />
+  <line x1="3" x2="21" y1="10" y2="10" />
+  <path d="M8 14h.01" />
+  <path d="M12 14h.01" />
+  <path d="M16 14h.01" />
+  <path d="M8 18h.01" />
+  <path d="M12 18h.01" />
+  <path d="M16 18h.01" /></svg></span> Songs by Release Year</div>
+      <canvas id="year-canvas" width="1000" height="180" style="width:100%"></canvas>
+      <div class="hist-labels" id="year-labels"></div>
+    </div>
+
+    <!-- DURATION -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="10" x2="14" y1="2" y2="2" />
+  <line x1="12" x2="15" y1="14" y2="11" />
+  <circle cx="12" cy="14" r="8" /></svg> Song Duration</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="10" x2="14" y1="2" y2="2" />
+  <line x1="12" x2="15" y1="14" y2="11" />
+  <circle cx="12" cy="14" r="8" /></svg></span> Duration Distribution</div>
+        <canvas id="dur-canvas" width="420" height="140" style="width:100%"></canvas>
+        <div class="hist-labels" id="dur-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg></span> Feature Correlations</div>
+        <div id="correlations" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+
+    <!-- OUTLIERS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="8" r="6" />
+  <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></svg> Extremes & Outliers</div>
+    <div class="grid-3" id="extremes-grid"></div>
+
+    <!-- ACOUSTICNESS + INSTRUMENTALNESS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4" />
+  <path d="M12 18V2l7 4" /></svg> Acoustic & Instrumental</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4" />
+  <path d="M12 18V2l7 4" /></svg></span> Acousticness Spectrum</div>
+        <canvas id="acoustic-canvas" width="420" height="140" style="width:100%"></canvas>
+        <div class="hist-labels" id="acoustic-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="20" height="16" x="2" y="4" rx="2" ry="2" />
+  <path d="M6 8h.001" />
+  <path d="M10 8h.001" />
+  <path d="M14 8h.001" />
+  <path d="M18 8h.001" />
+  <path d="M8 12h.001" />
+  <path d="M12 12h.001" />
+  <path d="M16 12h.001" />
+  <path d="M7 16h10" /></svg></span> Instrumentalness Spectrum</div>
+        <canvas id="instr-canvas" width="420" height="140" style="width:100%"></canvas>
+        <div class="hist-labels" id="instr-labels"></div>
+      </div>
+    </div>
+
+    <!-- LIVENESS + SPEECHINESS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+  <line x1="12" x2="12" y1="19" y2="22" /></svg> Live & Spoken</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+  <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" />
+  <circle cx="12" cy="12" r="2" />
+  <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5" />
+  <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" /></svg></span> Liveness Score</div>
+        <canvas id="live-canvas" width="420" height="120" style="width:100%"></canvas>
+        <div class="hist-labels" id="live-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+  <line x1="12" x2="12" y1="19" y2="22" /></svg></span> Speechiness Score</div>
+        <canvas id="speech-canvas" width="420" height="120" style="width:100%"></canvas>
+        <div class="hist-labels" id="speech-labels"></div>
+      </div>
+    </div>
+
+    <!-- LOUDNESS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg> Loudness</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></svg></span> Loudness Distribution (dBFS)</div>
+      <canvas id="loud-canvas" width="1000" height="140" style="width:100%"></canvas>
+      <div class="hist-labels" id="loud-labels"></div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════
+         PERSONAL MUSIC PROFILE
+    ═══════════════════════════════════════════════ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+  <circle cx="12" cy="7" r="4" /></svg> Personal Music Profile</div>
+
+    <div class="profile-card reveal" id="profile-card">
+      <div class="profile-grid">
+        <div class="profile-archetype">
+          <div class="archetype-badge" id="archetype-badge">
+            <span class="archetype-icon-wrap" id="profile-icon-wrap"></span>
+            <span class="archetype-type">Your Listener Archetype</span>
+          </div>
+          <div class="archetype-name" id="profile-name">Loading...</div>
+          <div class="archetype-desc" id="profile-desc"></div>
+
+          <!-- Action buttons -->
+          <div class="archetype-actions">
+            <button class="arch-btn arch-btn-primary" id="share-btn" onclick="shareArchetype()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="18" cy="5" r="3" />
+  <circle cx="6" cy="12" r="3" />
+  <circle cx="18" cy="19" r="3" />
+  <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+  <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>
+              Share
+            </button>
+            <button class="arch-btn arch-btn-secondary" id="save-btn" onclick="saveArchetypeCard()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+  <polyline points="7 10 12 15 17 10" />
+  <line x1="12" x2="12" y1="15" y2="3" /></svg>
+              Save Card
+            </button>
+            <button class="arch-btn arch-btn-ghost" onclick="openArchetypeExplorer()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>
+              Explore All
+            </button>
+          </div>
+        </div>
+        <div class="profile-traits" id="profile-traits"></div>
+      </div>
+
+      <!-- Archetype Explorer Modal -->
+      <div class="arch-modal-overlay" id="arch-modal" onclick="closeArchetypeExplorer(event)">
+        <div class="arch-modal">
+          <div class="arch-modal-header">
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;letter-spacing:-0.02em">All Listener Archetypes</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">Which one sounds like you?</div>
+            </div>
+            <button onclick="closeArchetypeExplorer()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M18 6 6 18" />
+  <path d="m6 6 12 12" /></svg>
+            </button>
+          </div>
+          <div class="arch-modal-grid" id="arch-modal-grid"></div>
+        </div>
+      </div>
+
+      <!-- Share Toast -->
+      <div class="share-toast" id="share-toast">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+  <polyline points="22 4 12 14.01 9 11.01" /></svg>
+        Link copied to clipboard!
+      </div>
+
+      <!-- Taste Fingerprint -->
+      <div class="fingerprint-section">
+        <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px;">Taste Fingerprint</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0">Key numbers that define your music personality</div>
+        <div class="fingerprint-grid" id="fingerprint-grid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         LISTENING ERA BREAKDOWN
+    ═══════════════════════════════════════════════ -->
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <polyline points="12 6 12 12 16 14" /></svg> Listening Eras</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10" />
+  <polyline points="12 6 12 12 16 14" /></svg></span> Which Decades Shaped Your Taste?</div>
+      <div class="era-grid" id="era-grid"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         FEATURE EVOLUTION OVER TIME
+    ═══════════════════════════════════════════════ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+  <polyline points="16 7 22 7 22 13" /></svg> Taste Over Time</div>
+
+    <div class="panel reveal" style="margin-bottom:24px;">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+  <polyline points="16 7 22 7 22 13" /></svg></span> Audio Feature Evolution (by month you saved songs)</div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:14px;">How your taste in sound has changed over time — smoothed 3-month rolling average</div>
+      <div class="linechart-legend" id="evo-legend"></div>
+      <div class="linechart-wrap">
+        <canvas id="evo-canvas" width="1000" height="300" style="width:100%"></canvas>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-top:6px;" id="evo-x-labels"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg></span> Mood Shift Over Time</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:14px;">Average happiness (valence) of songs you saved each month</div>
+        <canvas id="mood-evo-canvas" width="500" height="180" style="width:100%"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-top:6px;" id="mood-evo-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg></span> Energy Shift Over Time</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:14px;">Average energy of songs you saved each month</div>
+        <canvas id="energy-evo-canvas" width="500" height="180" style="width:100%"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-top:6px;" id="energy-evo-labels"></div>
+      </div>
+    </div>
+
+    <div class="panel reveal" style="margin-bottom:24px;">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+  <line x1="12" x2="12" y1="19" y2="22" /></svg></span> Artist Discovery Timeline</div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:16px;">When you first saved a song by each artist — your top 20 discoveries</div>
+      <div style="overflow-x:auto;">
+        <table class="artist-era-table" id="artist-discovery-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Artist</th>
+              <th>First Saved</th>
+              <th>Songs</th>
+              <th>Avg Popularity</th>
+              <th>Avg Energy</th>
+              <th>Avg Valence</th>
+            </tr>
+          </thead>
+          <tbody id="artist-discovery-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg></span> Popularity Taste Over Time</div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-bottom:14px;">Are you discovering more underground or mainstream music lately?</div>
+      <canvas id="pop-evo-canvas" width="1000" height="180" style="width:100%"></canvas>
+      <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-top:6px;" id="pop-evo-labels"></div>
+      <div style="margin-top:12px;display:flex;gap:20px;font-size:0.7rem;">
+        <span style="color:var(--accent)">■ Avg Popularity</span>
+        <span style="color:var(--accent3)">■ Mainstream (>70)</span>
+        <span style="color:var(--muted)">■ Underground (<40)</span>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</div><!-- /app -->
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ── DATA STORE ──
+let songs = [];
+
+// ── INLINE LUCIDE ICONS ──
+const ICONS = {
+  "activity": `<path d="M22 12h-4l-3 9L9 3l-3 9H2" />`,
+  "alert-circle": `<circle cx="12" cy="12" r="10" />
+  <line x1="12" x2="12" y1="8" y2="12" />
+  <line x1="12" x2="12.01" y1="16" y2="16" />`,
+  "award": `<circle cx="12" cy="8" r="6" />
+  <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />`,
+  "bar-chart-2": `<line x1="18" x2="18" y1="20" y2="10" />
+  <line x1="12" x2="12" y1="20" y2="4" />
+  <line x1="6" x2="6" y1="20" y2="14" />`,
+  "building": `<rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
+  <path d="M9 22v-4h6v4" />
+  <path d="M8 6h.01" />
+  <path d="M16 6h.01" />
+  <path d="M12 6h.01" />
+  <path d="M12 10h.01" />
+  <path d="M12 14h.01" />
+  <path d="M16 10h.01" />
+  <path d="M16 14h.01" />
+  <path d="M8 10h.01" />
+  <path d="M8 14h.01" />`,
+  "calendar": `<rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+  <line x1="16" x2="16" y1="2" y2="6" />
+  <line x1="8" x2="8" y1="2" y2="6" />
+  <line x1="3" x2="21" y1="10" y2="10" />`,
+  "calendar-days": `<rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+  <line x1="16" x2="16" y1="2" y2="6" />
+  <line x1="8" x2="8" y1="2" y2="6" />
+  <line x1="3" x2="21" y1="10" y2="10" />
+  <path d="M8 14h.01" />
+  <path d="M12 14h.01" />
+  <path d="M16 14h.01" />
+  <path d="M8 18h.01" />
+  <path d="M12 18h.01" />
+  <path d="M16 18h.01" />`,
+  "check-circle": `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+  <polyline points="22 4 12 14.01 9 11.01" />`,
+  "clock": `<circle cx="12" cy="12" r="10" />
+  <polyline points="12 6 12 12 16 14" />`,
+  "cloud": `<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />`,
+  "cloud-rain": `<path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+  <path d="M16 14v6" />
+  <path d="M8 14v6" />
+  <path d="M12 16v6" />`,
+  "compass": `<circle cx="12" cy="12" r="10" />
+  <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />`,
+  "crosshair": `<circle cx="12" cy="12" r="10" />
+  <line x1="22" x2="18" y1="12" y2="12" />
+  <line x1="6" x2="2" y1="12" y2="12" />
+  <line x1="12" x2="12" y1="6" y2="2" />
+  <line x1="12" x2="12" y1="22" y2="18" />`,
+  "disc": `<circle cx="12" cy="12" r="10" />
+  <circle cx="12" cy="12" r="2" />`,
+  "disc-3": `<circle cx="12" cy="12" r="10" />
+  <path d="M6 12c0-1.7.7-3.2 1.8-4.2" />
+  <circle cx="12" cy="12" r="2" />
+  <path d="M18 12c0 1.7-.7 3.2-1.8 4.2" />`,
+  "download": `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+  <polyline points="7 10 12 15 17 10" />
+  <line x1="12" x2="12" y1="15" y2="3" />`,
+  "flame": `<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />`,
+  "frown": `<circle cx="12" cy="12" r="10" />
+  <path d="M16 16s-1.5-2-4-2-4 2-4 2" />
+  <line x1="9" x2="9.01" y1="9" y2="9" />
+  <line x1="15" x2="15.01" y1="9" y2="9" />`,
+  "gauge": `<path d="m12 14 4-4" />
+  <path d="M3.34 19a10 10 0 1 1 17.32 0" />`,
+  "globe": `<circle cx="12" cy="12" r="10" />
+  <line x1="2" x2="22" y1="12" y2="12" />
+  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />`,
+  "hourglass": `<path d="M5 22h14" />
+  <path d="M5 2h14" />
+  <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+  <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />`,
+  "key": `<circle cx="7.5" cy="15.5" r="5.5" />
+  <path d="m21 2-9.6 9.6" />
+  <path d="m15.5 7.5 3 3L22 7l-3-3" />`,
+  "keyboard": `<rect width="20" height="16" x="2" y="4" rx="2" ry="2" />
+  <path d="M6 8h.001" />
+  <path d="M10 8h.001" />
+  <path d="M14 8h.001" />
+  <path d="M18 8h.001" />
+  <path d="M8 12h.001" />
+  <path d="M12 12h.001" />
+  <path d="M16 12h.001" />
+  <path d="M7 16h10" />`,
+  "layout-dashboard": `<rect width="7" height="9" x="3" y="3" rx="1" />
+  <rect width="7" height="5" x="14" y="3" rx="1" />
+  <rect width="7" height="9" x="14" y="12" rx="1" />
+  <rect width="7" height="5" x="3" y="16" rx="1" />`,
+  "lightbulb": `<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+  <path d="M9 18h6" />
+  <path d="M10 22h4" />`,
+  "mic": `<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+  <line x1="12" x2="12" y1="19" y2="22" />`,
+  "moon": `<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />`,
+  "music": `<path d="M9 18V5l12-2v13" />
+  <circle cx="6" cy="18" r="3" />
+  <circle cx="18" cy="16" r="3" />`,
+  "music-2": `<circle cx="8" cy="18" r="4" />
+  <path d="M12 18V2l7 4" />`,
+  "radio": `<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+  <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" />
+  <circle cx="12" cy="12" r="2" />
+  <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5" />
+  <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />`,
+  "search": `<circle cx="11" cy="11" r="8" />
+  <path d="m21 21-4.3-4.3" />`,
+  "share-2": `<circle cx="18" cy="5" r="3" />
+  <circle cx="6" cy="12" r="3" />
+  <circle cx="18" cy="19" r="3" />
+  <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+  <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />`,
+  "sliders-horizontal": `<line x1="21" x2="14" y1="4" y2="4" />
+  <line x1="10" x2="3" y1="4" y2="4" />
+  <line x1="21" x2="12" y1="12" y2="12" />
+  <line x1="8" x2="3" y1="12" y2="12" />
+  <line x1="21" x2="16" y1="20" y2="20" />
+  <line x1="12" x2="3" y1="20" y2="20" />
+  <line x1="14" x2="14" y1="2" y2="6" />
+  <line x1="8" x2="8" y1="10" y2="14" />
+  <line x1="16" x2="16" y1="18" y2="22" />`,
+  "smartphone": `<rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+  <path d="M12 18h.01" />`,
+  "smile": `<circle cx="12" cy="12" r="10" />
+  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+  <line x1="9" x2="9.01" y1="9" y2="9" />
+  <line x1="15" x2="15.01" y1="9" y2="9" />`,
+  "sprout": `<path d="M7 20h10" />
+  <path d="M10 20c5.5-2.5.8-6.4 3-10" />
+  <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" />
+  <path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z" />`,
+  "star": `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />`,
+  "sun": `<circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" />`,
+  "tag": `<path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+  <path d="M7 7h.01" />`,
+  "target": `<circle cx="12" cy="12" r="10" />
+  <circle cx="12" cy="12" r="6" />
+  <circle cx="12" cy="12" r="2" />`,
+  "timer": `<line x1="10" x2="14" y1="2" y2="2" />
+  <line x1="12" x2="15" y1="14" y2="11" />
+  <circle cx="12" cy="14" r="8" />`,
+  "trending-down": `<polyline points="22 17 13.5 8.5 8.5 13.5 2 7" />
+  <polyline points="16 17 22 17 22 11" />`,
+  "trending-up": `<polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+  <polyline points="16 7 22 7 22 13" />`,
+  "user": `<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+  <circle cx="12" cy="7" r="4" />`,
+  "users": `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <circle cx="9" cy="7" r="4" />
+  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+  <path d="M16 3.13a4 4 0 0 1 0 7.75" />`,
+  "volume-2": `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />`,
+  "volume-x": `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+  <line x1="22" x2="16" y1="9" y2="15" />
+  <line x1="16" x2="22" y1="9" y2="15" />`,
+  "waves": `<path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+  <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+  <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />`,
+  "x": `<path d="M18 6 6 18" />
+  <path d="m6 6 12 12" />`,
+  "zap": `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />`
+};
+
+function icon(name, color, size) {
+  size = size || 16;
+  color = color || 'currentColor';
+  const inner = ICONS[name] || '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0">${inner}</svg>`;
+}
+
+
+
+
+// ── COLORS ──
+const COLORS = {
+  green: '#1db954',
+  orange: '#ff6b35',
+  purple: '#a855f7',
+  blue: '#38bdf8',
+  pink: '#f472b6',
+  yellow: '#facc15',
+  teal: '#2dd4bf',
+  red: '#f87171',
+};
+
+const COLOR_LIST = Object.values(COLORS);
+
+// ── UPLOAD ──
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); processFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => processFile(fileInput.files[0]));
+
+function processFile(file) {
+  if (!file) return;
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: results => {
+      songs = results.data;
+      launch();
+    }
+  });
+}
+
+function launch() {
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  buildAll();
+  initScrollReveal();
+
+}
+
+// ── HELPERS ──
+const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+const fmtMs = ms => { const m = Math.floor(ms/60000), s = Math.floor((ms%60000)/1000); return `${m}:${s.toString().padStart(2,'0')}`; };
+const fmtNum = n => n >= 1000 ? (n/1000).toFixed(1)+'k' : n;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+function countBy(arr, fn) {
+  const m = {};
+  arr.forEach(x => { const k = fn(x); m[k] = (m[k]||0)+1; });
+  return Object.entries(m).sort((a,b) => b[1]-a[1]);
+}
+
+function histogram(values, bins, min, max) {
+  const w = (max - min) / bins;
+  const counts = Array(bins).fill(0);
+  values.forEach(v => {
+    const i = Math.min(bins-1, Math.floor((v - min) / w));
+    if (i >= 0) counts[i]++;
+  });
+  return counts;
+}
+
+// ── KEY NAMES ──
+const KEY_NAMES = ['C','C♯/D♭','D','D♯/E♭','E','F','F♯/G♭','G','G♯/A♭','A','A♯/B♭','B'];
+
+// ── NUMERIC FIELDS ──
+function numField(s, f) { return parseFloat(s[f]); }
+
+// ── BUILD ALL ──
+function buildAll() {
+  const nums = {
+    dance: songs.map(s => numField(s,'Danceability')).filter(n => !isNaN(n)),
+    energy: songs.map(s => numField(s,'Energy')).filter(n => !isNaN(n)),
+    valence: songs.map(s => numField(s,'Valence')).filter(n => !isNaN(n)),
+    tempo: songs.map(s => numField(s,'Tempo')).filter(n => !isNaN(n)),
+    loudness: songs.map(s => numField(s,'Loudness')).filter(n => !isNaN(n)),
+    acoustic: songs.map(s => numField(s,'Acousticness')).filter(n => !isNaN(n)),
+    instr: songs.map(s => numField(s,'Instrumentalness')).filter(n => !isNaN(n)),
+    liveness: songs.map(s => numField(s,'Liveness')).filter(n => !isNaN(n)),
+    speech: songs.map(s => numField(s,'Speechiness')).filter(n => !isNaN(n)),
+    pop: songs.map(s => numField(s,'Popularity')).filter(n => !isNaN(n)),
+    dur: songs.map(s => numField(s,'Duration (ms)')).filter(n => !isNaN(n)),
+  };
+
+  const totalMs = nums.dur.reduce((a,b)=>a+b,0);
+  const totalMin = Math.round(totalMs / 60000);
+  const totalHr = (totalMs / 3600000).toFixed(1);
+  const explicit = songs.filter(s => s['Explicit'] === 'true').length;
+  const addedDates = songs.map(s => s['Added At']).filter(Boolean).sort();
+  const earliest = addedDates[0] ? addedDates[0].slice(0,10) : '—';
+  const latest = addedDates[addedDates.length-1] ? addedDates[addedDates.length-1].slice(0,10) : '—';
+  const majorCount = songs.filter(s => s['Mode'] === '1').length;
+
+  // HERO
+  document.getElementById('hero-count').textContent = songs.length;
+  document.getElementById('hero-range').textContent = `${earliest} → ${latest}`;
+
+  // STAT CARDS
+  const cards = [
+    { val: songs.length, lbl: 'Total Tracks', sub: `${totalHr}h total runtime`, cls: 'accent-green' },
+    { val: (avg(nums.dance)*100).toFixed(0)+'%', lbl: 'Avg Danceability', sub: nums.dance.filter(v=>v>0.7).length+' high-energy tracks', cls: 'accent-orange' },
+    { val: (avg(nums.energy)*100).toFixed(0)+'%', lbl: 'Avg Energy', sub: nums.energy.filter(v=>v>0.8).length+' intense tracks', cls: 'accent-purple' },
+    { val: (avg(nums.valence)*100).toFixed(0)+'%', lbl: 'Avg Happiness', sub: nums.valence.filter(v=>v>0.6).length+' upbeat tracks', cls: 'accent-blue' },
+    { val: Math.round(avg(nums.tempo)), lbl: 'Avg BPM', sub: `${nums.tempo.filter(v=>v>120).length} fast-tempo tracks`, cls: 'accent-green' },
+    { val: avg(nums.pop).toFixed(0), lbl: 'Avg Popularity', sub: `Max: ${Math.max(...nums.pop)}`, cls: 'accent-orange' },
+    { val: fmtMs(avg(nums.dur)), lbl: 'Avg Duration', sub: `${fmtMs(Math.max(...nums.dur))} longest`, cls: 'accent-purple' },
+    { val: explicit, lbl: 'Explicit Tracks', sub: `${((explicit/songs.length)*100).toFixed(0)}% of library`, cls: 'accent-blue' },
+    { val: majorCount, lbl: 'Major Key', sub: `${songs.length-majorCount} minor key`, cls: 'accent-green' },
+  ];
+
+  const statRow = document.getElementById('stat-row');
+  cards.forEach((c,i) => {
+    const el = document.createElement('div');
+    el.className = `stat-card ${c.cls}`;
+    el.style.animationDelay = `${i*0.07}s`;
+    el.innerHTML = `<div class="val">${c.val}</div><div class="lbl">${c.lbl}</div><div class="sub">${c.sub}</div>`;
+    statRow.appendChild(el);
+  });
+
+  // GENRES (built early so insights can reference top genre)
+  const genreEntries = buildGenres(songs);
+  buildGenreCloud(genreEntries);
+
+  // INSIGHTS
+  buildInsights(songs, nums, majorCount, explicit, genreEntries);
+
+  // TIMELINE
+  buildTimeline(songs);
+
+  // ARTISTS
+  buildBars('artist-bars', countBy(songs, s => s['Artist Name(s)'].split(';')[0].trim()).slice(0,15), COLORS.green, 'Tracks');
+
+  // TOP TRACKS
+  buildTopTracks(songs);
+
+  // AUDIO FEATURES
+  buildAudioFeatures(nums);
+
+  // RADAR
+  drawRadar('radar-canvas', {
+    Danceability: avg(nums.dance),
+    Energy: avg(nums.energy),
+    Valence: avg(nums.valence),
+    Acousticness: avg(nums.acoustic),
+    Speechiness: avg(nums.speech) * 5,
+    Liveness: avg(nums.liveness) * 3,
+  });
+
+  // MOOD CANVAS
+  drawMoodMap(songs);
+
+  // HISTOGRAMS
+  drawHistogram('valence-canvas', 'valence-labels', nums.valence, 20, 0, 1, COLORS.yellow, 'Sad ← → Happy');
+  drawHistogram('dance-canvas', 'dance-labels', nums.dance, 20, 0, 1, COLORS.orange, '');
+  drawHistogram('tempo-canvas', 'tempo-labels', nums.tempo, 25, 60, 210, COLORS.purple, 'BPM');
+  drawHistogram('dur-canvas', 'dur-labels', nums.dur.map(d=>d/60000), 20, 0.5, 6, COLORS.blue, 'Minutes');
+  drawHistogram('pop-canvas', 'pop-labels', nums.pop, 20, 0, 100, COLORS.green, 'Popularity Score');
+  drawHistogram('acoustic-canvas', 'acoustic-labels', nums.acoustic, 20, 0, 1, COLORS.teal, 'Acoustic ← → Electric');
+  drawHistogram('instr-canvas', 'instr-labels', nums.instr, 20, 0, 1, COLORS.pink, 'Vocal ← → Instrumental');
+  drawHistogram('loud-canvas', 'loud-labels', nums.loudness, 25, -25, 0, COLORS.red, 'dBFS (quiet → loud)');
+
+  // SMALL CANVASES
+  drawSmallBar('live-canvas', 'live-labels', nums.liveness, COLORS.teal);
+  drawSmallBar('speech-canvas', 'speech-labels', nums.speech, COLORS.pink);
+
+  // KEY WHEEL
+  buildKeyWheel(songs);
+
+  // MODE BAR
+  drawModeBar('mode-canvas', majorCount, songs.length - majorCount);
+
+  // LABELS
+  const labelCounts = countBy(songs, s => s['Record Label'] || 'Independent');
+  buildBars('label-bars', labelCounts.slice(0,12), COLORS.blue, 'Releases');
+
+  // EXPLICIT DONUT
+  drawDonut('explicit-canvas', [['Clean', songs.length-explicit, COLORS.green], ['Explicit', explicit, COLORS.red]], 'explicit-legend');
+
+  // YEAR DISTRIBUTION
+  buildYearChart(songs);
+
+  // CORRELATIONS
+  buildCorrelations(songs, nums);
+
+  // EXTREMES
+  buildExtremes(songs, nums);
+
+  // PROFILE + EVOLUTION (new sections)
+  buildProfile(songs, nums, genreEntries);
+  buildEras(songs);
+  buildEvolution(songs);
+}
+
+// ── INSIGHTS ──
+function buildInsights(songs, nums, majorCount, explicit, genreEntries) {
+  const topArtist = countBy(songs, s => s['Artist Name(s)'].split(';')[0].trim())[0];
+  const topGenre = genreEntries[0];
+  const moodLabel = avg(nums.valence) > 0.6 ? 'upbeat & positive' : avg(nums.valence) > 0.4 ? 'balanced & neutral' : 'melancholic & introspective';
+  const tempoLabel = avg(nums.tempo) > 130 ? 'fast' : avg(nums.tempo) > 100 ? 'moderate' : 'slow';
+  const mostRecent = songs.filter(s => s['Added At']).sort((a,b) => b['Added At'].localeCompare(a['Added At']))[0];
+
+  const insightsData = [
+    { lucide: 'mic', color: '#1db954', title: 'Favorite Artist', body: `You've saved <span class="highlight">${topArtist[1]} songs</span> by <span class="highlight">${topArtist[0]}</span> — your most-liked artist by a clear margin.` },
+    { lucide: 'smile', color: '#facc15', title: 'Overall Mood', body: `Your library skews <span class="highlight">${moodLabel}</span> with an average valence of <span class="highlight">${(avg(nums.valence)*100).toFixed(0)}%</span>.` },
+    { lucide: 'zap', color: '#ff6b35', title: 'Energy Preference', body: `You tend to like <span class="highlight">${avg(nums.energy) > 0.6 ? 'high-energy' : 'chill'}</span> tracks. ${nums.energy.filter(v=>v>0.7).length} songs are above 70% energy.` },
+    { lucide: 'activity', color: '#a855f7', title: 'Tempo Taste', body: `Your songs lean <span class="highlight">${tempoLabel}-tempo</span>, averaging <span class="highlight">${Math.round(avg(nums.tempo))} BPM</span>.` },
+    { lucide: 'music-2', color: '#1db954', title: 'Acoustic vs Electric', body: `<span class="highlight">${(avg(nums.acoustic)*100).toFixed(0)}%</span> average acousticness. You lean toward ${avg(nums.acoustic) > 0.5 ? 'acoustic/organic' : 'produced/electronic'} sounds.` },
+    { lucide: 'key', color: '#facc15', title: 'Key Signature', body: `${((majorCount/songs.length)*100).toFixed(0)}% of your songs are in <span class="highlight">major keys</span> — ${majorCount > songs.length/2 ? 'a generally bright tonality' : 'showing a preference for minor-key depth'}.` },
+    { lucide: 'clock', color: '#38bdf8', title: 'Latest Add', body: mostRecent ? `Last saved: <span class="highlight">"${mostRecent['Track Name']}"</span> by ${mostRecent['Artist Name(s)'].split(';')[0]}` : 'N/A' },
+    { lucide: 'tag', color: '#a855f7', title: 'Genre Profile', body: topGenre ? `Your dominant genre is <span class="highlight">${topGenre[0]}</span> — found in ${topGenre[1]} tracks.` : 'Varied genre mix.' },
+  ];
+
+  const container = document.getElementById('insights');
+  insightsData.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'insight-card';
+    el.innerHTML = `<div class="insight-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${d.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"></svg></div><div class="insight-text"><div class="title">${d.title}</div><div class="body">${d.body}</div></div>`;
+    container.appendChild(el);
+  });
+}
+
+// ── GENRES ──
+function buildGenres(songs) {
+  const counts = {};
+  songs.forEach(s => {
+    const genres = s['Genres'] || '';
+    if (!genres.trim()) { counts['(no genre)'] = (counts['(no genre)']||0)+1; return; }
+    genres.split(',').forEach(g => { const k = g.trim(); if(k) counts[k] = (counts[k]||0)+1; });
+  });
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  buildBars('genre-bars', entries.slice(0,15), COLORS.purple, 'Tracks');
+  return entries;
+}
+
+function buildGenreCloud(entries) {
+  const cloud = document.getElementById('genre-cloud');
+  const max = entries[0]?.[1] || 1;
+  const hues = [142,200,270,320,35,60];
+  entries.slice(0,30).forEach((e,i) => {
+    const el = document.createElement('div');
+    const size = 0.65 + (e[1]/max) * 0.7;
+    const hue = hues[i % hues.length];
+    el.className = 'genre-tag';
+    el.style.fontSize = size + 'rem';
+    el.style.borderColor = `hsla(${hue},60%,60%,0.4)`;
+    el.style.color = `hsl(${hue},60%,70%)`;
+    el.style.background = `hsla(${hue},60%,20%,0.15)`;
+    el.textContent = e[0];
+    cloud.appendChild(el);
+  });
+}
+
+// ── TIMELINE ──
+function buildTimeline(songs) {
+  const counts = {};
+  songs.forEach(s => {
+    if (!s['Added At']) return;
+    const key = s['Added At'].slice(0,7); // YYYY-MM
+    counts[key] = (counts[key]||0)+1;
+  });
+  const entries = Object.entries(counts).sort();
+  const max = Math.max(...entries.map(e=>e[1]));
+  const tl = document.getElementById('timeline');
+
+  entries.forEach(([month, count]) => {
+    const pct = (count/max*100).toFixed(1);
+    const row = document.createElement('div');
+    row.className = 'tl-month';
+    row.innerHTML = `
+      <div class="tl-label">${month}</div>
+      <div class="tl-bar-wrap"><div class="tl-bar" data-w="${pct}" style="width:0%">${count > 2 ? count+' songs' : ''}</div></div>
+      <div class="tl-count">${count}</div>`;
+    tl.appendChild(row);
+  });
+
+  setTimeout(() => {
+    tl.querySelectorAll('.tl-bar').forEach(b => b.style.width = b.dataset.w + '%');
+  }, 400);
+}
+
+// ── BAR CHART ──
+function buildBars(id, entries, color, unit) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  const max = entries[0]?.[1] || 1;
+  entries.forEach(([label, count]) => {
+    const pct = (count/max*100).toFixed(1);
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label" title="${label}">${label}</div>
+      <div class="bar-track"><div class="bar-fill" data-w="${pct}" style="width:0%;--bar-color:${color}"></div></div>
+      <div class="bar-count">${count}</div>`;
+    container.appendChild(row);
+  });
+  setTimeout(() => {
+    container.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.w + '%');
+  }, 300);
+}
+
+// ── TOP TRACKS ──
+function buildTopTracks(songs) {
+  const sorted = [...songs].filter(s => numField(s,'Popularity')).sort((a,b) => numField(b,'Popularity')-numField(a,'Popularity')).slice(0,15);
+  const list = document.getElementById('top-tracks');
+  sorted.forEach((s,i) => {
+    const pop = numField(s,'Popularity');
+    const color = pop >= 80 ? COLORS.green : pop >= 60 ? COLORS.yellow : COLORS.orange;
+    const el = document.createElement('div');
+    el.className = 'track-item';
+    el.innerHTML = `
+      <div class="track-num">${i+1}</div>
+      <div class="track-info"><div class="name">${s['Track Name']}</div><div class="artist">${s['Artist Name(s)'].split(';')[0]}</div></div>
+      <div class="track-pop"><span class="pop-badge" style="background:${color}22;color:${color}">${pop}</span></div>
+      <div style="font-size:0.65rem;color:var(--muted);text-align:right">${fmtMs(numField(s,'Duration (ms)'))}</div>`;
+    list.appendChild(el);
+  });
+}
+
+// ── AUDIO FEATURES ──
+function buildAudioFeatures(nums) {
+  const features = [
+    { name: 'Danceability', val: avg(nums.dance), color: COLORS.orange },
+    { name: 'Energy', val: avg(nums.energy), color: COLORS.red },
+    { name: 'Valence', val: avg(nums.valence), color: COLORS.yellow },
+    { name: 'Acousticness', val: avg(nums.acoustic), color: COLORS.teal },
+    { name: 'Liveness', val: avg(nums.liveness), color: COLORS.purple },
+    { name: 'Speechiness', val: avg(nums.speech), color: COLORS.pink },
+    { name: 'Instrumentalness', val: avg(nums.instr), color: COLORS.blue },
+  ];
+
+  const container = document.getElementById('audio-features');
+  features.forEach(f => {
+    const pct = (f.val * 100).toFixed(1);
+    const el = document.createElement('div');
+    el.className = 'feat-row';
+    el.innerHTML = `
+      <div class="feat-header"><span class="feat-name">${f.name}</span><span class="feat-val">${pct}%</span></div>
+      <div class="feat-track"><div class="feat-fill" data-w="${pct}" style="width:0%;background:${f.color}"></div></div>`;
+    container.appendChild(el);
+  });
+
+  setTimeout(() => {
+    container.querySelectorAll('.feat-fill').forEach(b => b.style.width = b.dataset.w + '%');
+  }, 400);
+}
+
+// ── RADAR ──
+function drawRadar(id, data) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  const r = Math.min(W,H)*0.38;
+  const keys = Object.keys(data);
+  const vals = Object.values(data);
+  const N = keys.length;
+  const angleStep = (Math.PI*2) / N;
+
+  ctx.clearRect(0,0,W,H);
+
+  // grid
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const a = i * angleStep - Math.PI/2;
+      const rr = r * ring / 4;
+      const x = cx + Math.cos(a)*rr, y = cy + Math.sin(a)*rr;
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.stroke();
+  }
+
+  // spokes
+  for (let i = 0; i < N; i++) {
+    const a = i * angleStep - Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a)*r, cy + Math.sin(a)*r);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.stroke();
+  }
+
+  // data polygon
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const a = i * angleStep - Math.PI/2;
+    const v = clamp(vals[i], 0, 1);
+    const x = cx + Math.cos(a)*r*v, y = cy + Math.sin(a)*r*v;
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(29,185,84,0.2)';
+  ctx.fill();
+  ctx.strokeStyle = COLORS.green;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // dots
+  for (let i = 0; i < N; i++) {
+    const a = i * angleStep - Math.PI/2;
+    const v = clamp(vals[i], 0, 1);
+    const x = cx + Math.cos(a)*r*v, y = cy + Math.sin(a)*r*v;
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle = COLORS.green;
+    ctx.fill();
+  }
+
+  // labels
+  ctx.fillStyle = 'rgba(240,239,232,0.7)';
+  ctx.font = '11px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < N; i++) {
+    const a = i * angleStep - Math.PI/2;
+    const x = cx + Math.cos(a)*(r+22), y = cy + Math.sin(a)*(r+22) + 4;
+    ctx.fillText(keys[i], x, y);
+  }
+}
+
+// ── MOOD MAP ──
+function drawMoodMap(songs) {
+  const canvas = document.getElementById('mood-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // quadrant backgrounds
+  const quads = [
+    { x:W/2, y:0, w:W/2, h:H/2, label:'Happy + Energetic', color:'rgba(29,185,84,0.05)' },
+    { x:0, y:0, w:W/2, h:H/2, label:'Angry + Turbulent', color:'rgba(255,107,53,0.05)' },
+    { x:0, y:H/2, w:W/2, h:H/2, label:'Sad + Depressed', color:'rgba(168,85,247,0.05)' },
+    { x:W/2, y:H/2, w:W/2, h:H/2, label:'Peaceful + Content', color:'rgba(56,189,248,0.05)' },
+  ];
+
+  quads.forEach(q => {
+    ctx.fillStyle = q.color;
+    ctx.fillRect(q.x, q.y, q.w, q.h);
+  });
+
+  // axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+
+  // quad labels
+  ctx.font = '9px DM Mono';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.textAlign = 'center';
+  ctx.fillText('Happy + Energetic', W*0.75, 14);
+  ctx.fillText('Angry + Turbulent', W*0.25, 14);
+  ctx.fillText('Sad + Depressed', W*0.25, H-6);
+  ctx.fillText('Peaceful + Content', W*0.75, H-6);
+
+  // dots
+  songs.forEach(s => {
+    const v = numField(s,'Valence'), e = numField(s,'Energy');
+    if (isNaN(v)||isNaN(e)) return;
+    const x = v * W, y = (1-e) * H;
+    const pop = numField(s,'Popularity') || 50;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI*2);
+    const hue = v * 120; // red→green by valence
+    ctx.fillStyle = `hsla(${hue},70%,60%,0.6)`;
+    ctx.fill();
+  });
+
+  // axis labels
+  ctx.font = '10px DM Mono';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.textAlign = 'left'; ctx.fillText('LOW ENERGY', 4, H/2-4);
+  ctx.textAlign = 'right'; ctx.fillText('HIGH ENERGY', W-4, H/2-4);
+}
+
+// ── HISTOGRAM ──
+function drawHistogram(canvasId, labelsId, values, bins, min, max, color, labelHint) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const counts = histogram(values, bins, min, max);
+  const maxCount = Math.max(...counts);
+  const barW = W / bins;
+
+  counts.forEach((c, i) => {
+    const bh = (c/maxCount) * (H-20);
+    const x = i * barW;
+    const y = H - bh - 20;
+
+    ctx.fillStyle = color + 'cc';
+    ctx.beginPath();
+    ctx.roundRect(x+1, y, barW-2, bh, [3,3,0,0]);
+    ctx.fill();
+  });
+
+  // x-axis labels
+  const labelsEl = document.getElementById(labelsId);
+  if (labelsEl) {
+    const step = (max-min)/4;
+    labelsEl.innerHTML = '';
+    for (let i = 0; i <= 4; i++) {
+      const span = document.createElement('span');
+      const v = min + i*step;
+      span.textContent = v % 1 === 0 ? v.toFixed(0) : v.toFixed(1);
+      labelsEl.appendChild(span);
+    }
+  }
+}
+
+// ── SMALL BAR (single feature) ──
+function drawSmallBar(id, labelsId, values, color) {
+  drawHistogram(id, labelsId, values, 20, 0, 1, color, '');
+}
+
+// ── KEY WHEEL ──
+function buildKeyWheel(songs) {
+  const counts = {};
+  songs.forEach(s => {
+    const k = parseInt(s['Key']);
+    if (!isNaN(k) && k >= 0) {
+      const name = KEY_NAMES[k] || '?';
+      counts[name] = (counts[name]||0)+1;
+    }
+  });
+
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const container = document.getElementById('key-wheel');
+  sorted.forEach(([key, count], i) => {
+    const el = document.createElement('div');
+    el.className = 'key-chip';
+    const hue = (i * 30) % 360;
+    el.style.borderColor = `hsla(${hue},60%,60%,0.3)`;
+    el.innerHTML = `<span class="key-name" style="color:hsl(${hue},60%,70%)">${key}</span><span class="key-cnt">${count}</span>`;
+    container.appendChild(el);
+  });
+}
+
+// ── MODE BAR ──
+function drawModeBar(id, major, minor) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const majorPct = major / (major+minor);
+  ctx.clearRect(0,0,W,H);
+
+  ctx.fillStyle = COLORS.green;
+  ctx.beginPath(); ctx.roundRect(0,0,W*majorPct-1,H,[4,0,0,4]); ctx.fill();
+
+  ctx.fillStyle = COLORS.purple;
+  ctx.beginPath(); ctx.roundRect(W*majorPct+1,0,W*(1-majorPct)-1,H,[0,4,4,0]); ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '11px DM Mono';
+  ctx.textAlign = 'center';
+  if (majorPct > 0.15) ctx.fillText(`${(majorPct*100).toFixed(0)}%`, W*majorPct/2, H/2+4);
+  if (1-majorPct > 0.15) ctx.fillText(`${((1-majorPct)*100).toFixed(0)}%`, W*majorPct + W*(1-majorPct)/2, H/2+4);
+}
+
+// ── DONUT ──
+function drawDonut(id, data, legendId) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2, R=Math.min(W,H)*0.4, r=R*0.55;
+  const total = data.reduce((s,d)=>s+d[1],0);
+  let angle = -Math.PI/2;
+
+  data.forEach(([label, count, color]) => {
+    const sweep = (count/total) * Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,angle,angle+sweep);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    angle += sweep;
+  });
+
+  // hole
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.fillStyle = '#13131f';
+  ctx.fill();
+
+  // center text
+  ctx.fillStyle = '#f0efe8';
+  ctx.font = `bold 20px Syne, sans-serif`;
+  ctx.textAlign='center';
+  ctx.fillText(total, cx, cy+2);
+  ctx.font = '10px DM Mono';
+  ctx.fillStyle = '#6b6b7a';
+  ctx.fillText('tracks', cx, cy+16);
+
+  // legend
+  if (legendId) {
+    const leg = document.getElementById(legendId);
+    if (leg) {
+      leg.innerHTML = '';
+      data.forEach(([label,count,color]) => {
+        leg.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${color}"></div>${label} (${count})</div>`;
+      });
+    }
+  }
+}
+
+// ── YEAR CHART ──
+function buildYearChart(songs) {
+  const counts = {};
+  songs.forEach(s => {
+    const d = s['Release Date'];
+    if (!d) return;
+    const y = d.slice(0,4);
+    if (y >= '1950' && y <= '2030') counts[y] = (counts[y]||0)+1;
+  });
+
+  const years = Object.keys(counts).sort();
+  if (!years.length) return;
+
+  const canvas = document.getElementById('year-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height - 20;
+  ctx.clearRect(0,0,W, canvas.height);
+
+  const vals = years.map(y=>counts[y]);
+  const maxV = Math.max(...vals);
+  const barW = W / years.length;
+
+  years.forEach((y,i) => {
+    const bh = (counts[y]/maxV) * H;
+    const x = i*barW, yy = H-bh;
+    const gradient = ctx.createLinearGradient(0,yy,0,H);
+    gradient.addColorStop(0, COLORS.green);
+    gradient.addColorStop(1, COLORS.blue);
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.roundRect(x+1, yy, barW-2, bh, [2,2,0,0]);
+    ctx.fill();
+  });
+
+  // labels
+  const labelsEl = document.getElementById('year-labels');
+  if (labelsEl) {
+    labelsEl.innerHTML = '';
+    const showEvery = Math.ceil(years.length / 8);
+    years.forEach((y,i) => {
+      const span = document.createElement('span');
+      span.textContent = i % showEvery === 0 ? y : '';
+      labelsEl.appendChild(span);
+    });
+  }
+}
+
+// ── CORRELATIONS ──
+function buildCorrelations(songs, nums) {
+  const pairs = [
+    { a:'Energy', b:'Valence', va:nums.energy, vb:nums.valence, desc:'Energetic = Happy?' },
+    { a:'Danceability', b:'Valence', va:nums.dance, vb:nums.valence, desc:'Danceable = Happy?' },
+    { a:'Popularity', b:'Energy', va:nums.pop.map(v=>v/100), vb:nums.energy, desc:'Popular = Energetic?' },
+    { a:'Acousticness', b:'Energy', va:nums.acoustic, vb:nums.energy, desc:'Acoustic = Low Energy?' },
+    { a:'Tempo', b:'Energy', va:nums.tempo.map(v=>v/200), vb:nums.energy, desc:'Fast = Energetic?' },
+    { a:'Popularity', b:'Danceability', va:nums.pop.map(v=>v/100), vb:nums.dance, desc:'Popular = Danceable?' },
+  ];
+
+  function pearson(a, b) {
+    const n = Math.min(a.length, b.length);
+    const ma = avg(a), mb = avg(b);
+    let num=0, da=0, db=0;
+    for (let i=0;i<n;i++) { num+=(a[i]-ma)*(b[i]-mb); da+=(a[i]-ma)**2; db+=(b[i]-mb)**2; }
+    return num / Math.sqrt(da*db) || 0;
+  }
+
+  const cont = document.getElementById('correlations');
+  pairs.forEach(p => {
+    const r = pearson(p.va, p.vb);
+    const pct = Math.abs(r*100).toFixed(0);
+    const color = r > 0.3 ? COLORS.green : r < -0.3 ? COLORS.red : COLORS.muted || '#6b6b7a';
+    const dir = r > 0.1 ? '↑ positive' : r < -0.1 ? '↓ negative' : '— none';
+    const el = document.createElement('div');
+    el.style.cssText = 'display:flex;align-items:center;gap:10px;font-size:0.72rem;';
+    el.innerHTML = `
+      <div style="flex:1;color:var(--muted)">${p.desc}</div>
+      <div style="width:80px;background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:4px"></div>
+      </div>
+      <div style="width:70px;text-align:right;color:${color}">${dir} (${r.toFixed(2)})</div>`;
+    cont.appendChild(el);
+  });
+}
+
+// ── EXTREMES ──
+function buildExtremes(songs, nums) {
+  const container = document.getElementById('extremes-grid');
+  const extremes = [
+    { label:'Most Popular', lucide:'star', lcolor:'#facc15', song: [...songs].sort((a,b)=>numField(b,'Popularity')-numField(a,'Popularity'))[0], field:'Popularity', suffix:'/100' },
+    { label:'Least Popular', lucide:'sprout', lcolor:'#1db954', song: [...songs].filter(s=>numField(s,'Popularity')>0).sort((a,b)=>numField(a,'Popularity')-numField(b,'Popularity'))[0], field:'Popularity', suffix:'/100' },
+    { label:'Most Danceable', lucide:'music', lcolor:'#ff6b35', song: [...songs].sort((a,b)=>numField(b,'Danceability')-numField(a,'Danceability'))[0], field:'Danceability', fmt: v=>(v*100).toFixed(0)+'%' },
+    { label:'Most Energetic', lucide:'zap', lcolor:'#ff6b35', song: [...songs].sort((a,b)=>numField(b,'Energy')-numField(a,'Energy'))[0], field:'Energy', fmt: v=>(v*100).toFixed(0)+'%' },
+    { label:'Happiest', lucide:'smile', lcolor:'#facc15', song: [...songs].sort((a,b)=>numField(b,'Valence')-numField(a,'Valence'))[0], field:'Valence', fmt: v=>(v*100).toFixed(0)+'%' },
+    { label:'Saddest', lucide:'cloud-rain', lcolor:'#a855f7', song: [...songs].sort((a,b)=>numField(a,'Valence')-numField(b,'Valence'))[0], field:'Valence', fmt: v=>(v*100).toFixed(0)+'%' },
+    { label:'Fastest', lucide:'gauge', lcolor:'#38bdf8', song: [...songs].sort((a,b)=>numField(b,'Tempo')-numField(a,'Tempo'))[0], field:'Tempo', fmt: v=>v.toFixed(0)+' BPM' },
+    { label:'Slowest', lucide:'trending-down', lcolor:'#2dd4bf', song: [...songs].sort((a,b)=>numField(a,'Tempo')-numField(b,'Tempo'))[0], field:'Tempo', fmt: v=>v.toFixed(0)+' BPM' },
+    { label:'Longest', lucide:'hourglass', lcolor:'#38bdf8', song: [...songs].sort((a,b)=>numField(b,'Duration (ms)')-numField(a,'Duration (ms)'))[0], field:'Duration (ms)', fmt: fmtMs },
+    { label:'Most Acoustic', lucide:'music-2', lcolor:'#1db954', song: [...songs].sort((a,b)=>numField(b,'Acousticness')-numField(a,'Acousticness'))[0], field:'Acousticness', fmt: v=>(v*100).toFixed(0)+'%' },
+    { label:'Loudest', lucide:'volume-2', lcolor:'#ff6b35', song: [...songs].sort((a,b)=>numField(b,'Loudness')-numField(a,'Loudness'))[0], field:'Loudness', fmt: v=>v.toFixed(1)+'dB' },
+    { label:'Quietest', lucide:'volume-x', lcolor:'#6b6b7a', song: [...songs].sort((a,b)=>numField(a,'Loudness')-numField(b,'Loudness'))[0], field:'Loudness', fmt: v=>v.toFixed(1)+'dB' },
+  ];
+
+  extremes.forEach(ex => {
+    if (!ex.song) return;
+    const val = numField(ex.song, ex.field);
+    const display = ex.fmt ? ex.fmt(val) : val+(ex.suffix||'');
+    const el = document.createElement('div');
+    el.className = 'panel reveal';
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${ex.lcolor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"></svg>
+        <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em">${ex.label}</span>
+      </div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:4px;line-height:1.2">${ex.song['Track Name']}</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px">${ex.song['Artist Name(s)'].split(';')[0]}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;color:var(--accent)">${display}</div>`;
+    container.appendChild(el);
+  });
+}
+
+// ── SCROLL REVEAL ──
+function initScrollReveal() {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        // trigger bar animations
+        e.target.querySelectorAll('.bar-fill, .feat-fill').forEach(b => {
+          b.style.width = b.dataset.w + '%';
+        });
+        e.target.querySelectorAll('.tl-bar').forEach(b => {
+          b.style.width = b.dataset.w + '%';
+        });
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+}
+
+// ── CANVAS TOOLTIP ──
+function setupTooltip(canvas, songs) {
+  const tooltip = document.getElementById('tooltip');
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+    // find nearest dot
+    let best = null, bestDist = 20;
+    songs.forEach(s => {
+      const v = numField(s,'Valence'), en = numField(s,'Energy');
+      if (isNaN(v)||isNaN(en)) return;
+      const sx = v * canvas.width, sy = (1-en)*canvas.height;
+      const d = Math.sqrt((mx-sx)**2 + (my-sy)**2);
+      if (d < bestDist) { bestDist=d; best=s; }
+    });
+    if (best) {
+      tooltip.style.display='block';
+      tooltip.style.left = (e.clientX+12)+'px';
+      tooltip.style.top = (e.clientY-30)+'px';
+      tooltip.innerHTML = `<strong>${best['Track Name']}</strong><br>${best['Artist Name(s)'].split(';')[0]}<br>Valence: ${(numField(best,'Valence')*100).toFixed(0)}% · Energy: ${(numField(best,'Energy')*100).toFixed(0)}%`;
+    } else {
+      tooltip.style.display='none';
+    }
+  });
+  canvas.addEventListener('mouseleave', () => tooltip.style.display='none');
+}
+
+
+// ═══════════════════════════════════════════════
+// PERSONAL MUSIC PROFILE
+// ═══════════════════════════════════════════════
+function buildProfile(songs, nums, genreEntries) {
+  const avgDance = avg(nums.dance);
+  const avgEnergy = avg(nums.energy);
+  const avgValence = avg(nums.valence);
+  const avgAcoustic = avg(nums.acoustic);
+  const avgTempo = avg(nums.tempo);
+  const avgPop = avg(nums.pop);
+  const majorRatio = songs.filter(s => s['Mode'] === '1').length / songs.length;
+  const explicit = songs.filter(s => s['Explicit'] === 'true').length / songs.length;
+
+  // ── Archetype Classification ──
+  const archetypes = [
+    {
+      name: "The Euphoric Escapist", lucide: "sun",
+      condition: avgEnergy > 0.65 && avgValence > 0.58 && avgDance > 0.6,
+      desc: "Music is your portal to another dimension. You gravitate toward tracks that lift you up, fill rooms with energy, and make even mundane moments feel cinematic. Your library is a carefully curated happiness machine.",
+      color: COLORS.yellow,
+      traits: ["High Energy", "Joyful", "Danceable", "Mainstream"],
+      conditionLabel: "Energy >65% · Valence >58% · Dance >60%",
+    },
+    {
+      name: "The Melancholy Poet", lucide: "moon",
+      condition: avgValence < 0.42 && avgAcoustic > 0.3,
+      desc: "You find beauty in the bittersweet. Your songs carry weight, emotion, and lyrical depth. You don't shy away from sadness - you lean into it, finding catharsis and truth in every minor chord.",
+      color: COLORS.purple,
+      traits: ["Dark Themes", "Acoustic", "Lyrical Depth", "Introspective"],
+      conditionLabel: "Valence <42% · Acousticness >30%",
+    },
+    {
+      name: "The Chill Architect", lucide: "waves",
+      condition: avgEnergy < 0.55 && avgAcoustic > 0.35 && avgValence > 0.35,
+      desc: "You build sonic atmospheres. Your taste leans toward music that breathes - unhurried, textured, acoustic. You use music as a backdrop for focus, creativity, or quiet contemplation.",
+      color: COLORS.teal,
+      traits: ["Low Energy", "Acoustic", "Contemplative", "Textured"],
+      conditionLabel: "Energy <55% · Acoustic >35% · Valence >35%",
+    },
+    {
+      name: "The Rhythm Seeker", lucide: "audio-waveform",
+      condition: avgDance > 0.67 && avgTempo > 110,
+      desc: "Beat-first, always. You gravitate toward music with undeniable groove - rhythms that lock in and won't let go. Whether consciously or not, you're always moving to the music in your head.",
+      color: COLORS.orange,
+      traits: ["Danceable", "Fast Tempo", "Groovy", "Rhythmic"],
+      conditionLabel: "Dance >67% · Tempo >110 BPM",
+    },
+    {
+      name: "The Indie Discoverer", lucide: "telescope",
+      condition: avgPop < 65 && genreEntries.filter(([g]) => g !== "(no genre)").length > 5,
+      desc: "You live for the find. The underground track nobody else has heard. The artist about to blow up. Your library reads like a curated taste map - eclectic, intentional, and ahead of the curve.",
+      color: COLORS.pink,
+      traits: ["Low Popularity", "Genre Diverse", "Eclectic", "Tastemaker"],
+      conditionLabel: "Avg Popularity <65 · 5+ Genres",
+    },
+    {
+      name: "The Emotional Nomad", lucide: "compass",
+      condition: true,
+      desc: "Your taste defies easy categorization. You move between moods, genres, and energies with ease. One moment introspective, the next euphoric - your library is a full emotional atlas.",
+      color: COLORS.blue,
+      traits: ["Versatile", "Mood-Driven", "Eclectic", "Balanced"],
+      conditionLabel: "Default — the most universal listener",
+    },
+  ];
+
+  const archetype = archetypes.find(a => a.condition) || archetypes[archetypes.length - 1];
+  // Store archetype data globally for share/save
+  window._archetype = archetype;
+  window._allArchetypes = archetypes;
+
+  // Render icon using lucide + archetype color
+  const iconWrap = document.getElementById('profile-icon-wrap');
+  iconWrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${archetype.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"></svg>`;
+
+  document.getElementById('profile-name').textContent = archetype.name;
+  document.getElementById('profile-desc').textContent = archetype.desc;
+
+  // Init lucide for the new icon
+
+  // ── Trait Bars ──
+  const traits = [
+    { name: 'Energy Level', lo: 'Mellow', hi: 'Intense', val: avgEnergy, color: COLORS.red },
+    { name: 'Happiness',    lo: 'Dark',   hi: 'Joyful',  val: avgValence, color: COLORS.yellow },
+    { name: 'Groove',       lo: 'Still',  hi: 'Danceable', val: avgDance, color: COLORS.orange },
+    { name: 'Acousticness', lo: 'Produced', hi: 'Raw/Organic', val: avgAcoustic, color: COLORS.teal },
+    { name: 'Mainstream',   lo: 'Underground', hi: 'Mainstream', val: avgPop / 100, color: COLORS.green },
+    { name: 'Tempo',        lo: 'Slow',   hi: 'Fast',    val: Math.min(1, (avgTempo - 60) / 150), color: COLORS.purple },
+  ];
+
+  const container = document.getElementById('profile-traits');
+  traits.forEach(t => {
+    const pct = (t.val * 100).toFixed(0);
+    const el = document.createElement('div');
+    el.className = 'trait-row';
+    el.innerHTML = `
+      <div class="trait-header">
+        <span class="trait-name">${t.name}</span>
+        <span style="font-size:0.68rem;font-family:'Syne',sans-serif;color:${t.color};font-weight:700">${pct}%</span>
+      </div>
+      <div class="trait-slider">
+        <div class="trait-fill" data-w="${pct}" style="width:0%;background:linear-gradient(90deg,${t.color}88,${t.color});"></div>
+      </div>
+      <div class="trait-poles"><span>${t.lo}</span><span>${t.hi}</span></div>`;
+    container.appendChild(el);
+  });
+  setTimeout(() => {
+    container.querySelectorAll('.trait-fill').forEach(b => b.style.width = b.dataset.w + '%');
+  }, 500);
+
+  // ── Taste Fingerprint ──
+  const topArtist = countBy(songs, s => s['Artist Name(s)'].split(';')[0].trim())[0];
+  const uniqueArtists = new Set(songs.map(s => s['Artist Name(s)'].split(';')[0].trim())).size;
+  const uniqueLabels = new Set(songs.map(s => s['Record Label']).filter(Boolean)).size;
+  const addedDates = songs.map(s => s['Added At']).filter(Boolean).sort();
+  const spanDays = addedDates.length > 1
+    ? Math.round((new Date(addedDates[addedDates.length-1]) - new Date(addedDates[0])) / 86400000)
+    : 0;
+  const avgPerMonth = spanDays > 0 ? (songs.length / (spanDays / 30)).toFixed(1) : songs.length;
+  const highValence = songs.filter(s => numField(s,'Valence') > 0.7).length;
+  const highEnergy = songs.filter(s => numField(s,'Energy') > 0.7).length;
+  const avgDurMin = (avg(nums.dur) / 60000).toFixed(1);
+  const mostSavedMonth = (() => {
+    const counts = {};
+    songs.forEach(s => { if(s['Added At']) { const m = s['Added At'].slice(0,7); counts[m]=(counts[m]||0)+1; }});
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  })();
+
+  const fps = [
+    { lucide: 'mic', color: '#1db954', label: 'Fav Artist', value: topArtist?.[0]?.split(' ')[0] || '—' },
+    { lucide: 'users', color: '#38bdf8', label: 'Unique Artists', value: uniqueArtists },
+    { lucide: 'building', color: '#38bdf8', label: 'Labels', value: uniqueLabels },
+    { lucide: 'calendar', color: '#1db954', label: 'Saves/Month', value: avgPerMonth },
+    { lucide: 'smile', color: '#facc15', label: 'Upbeat Tracks', value: highValence },
+    { lucide: 'zap', color: '#ff6b35', label: 'High Energy', value: highEnergy },
+    { lucide: 'timer', color: '#38bdf8', label: 'Avg Length', value: avgDurMin + 'min' },
+    { lucide: 'flame', color: '#ff6b35', label: 'Peak Month', value: mostSavedMonth ? mostSavedMonth[0].slice(5) + ' ('+mostSavedMonth[1]+')' : '—' },
+  ];
+
+  const fpGrid = document.getElementById('fingerprint-grid');
+  fps.forEach(fp => {
+    const el = document.createElement('div');
+    el.className = 'fp-card';
+    el.innerHTML = `<div class="fp-icon-wrap"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${fp.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"></svg></div><div class="fp-label">${fp.label}</div><div class="fp-value">${fp.value}</div>`;
+    fpGrid.appendChild(el);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// LISTENING ERAS
+// ═══════════════════════════════════════════════
+function buildEras(songs) {
+  const eras = [
+    { name: 'Classic', years: [1950, 1979], color: COLORS.yellow, lucide: 'radio' },
+    { name: '80s',     years: [1980, 1989], color: COLORS.orange, lucide: 'music-2' },
+    { name: '90s',     years: [1990, 1999], color: COLORS.purple, lucide: 'disc' },
+    { name: '2000s',   years: [2000, 2009], color: COLORS.blue,   lucide: 'disc-3' },
+    { name: '2010s',   years: [2010, 2019], color: COLORS.teal,   lucide: 'smartphone' },
+    { name: '2020s',   years: [2020, 2099], color: COLORS.green,  lucide: 'globe' },
+  ];
+
+  eras.forEach(era => {
+    era.songs = songs.filter(s => {
+      const y = parseInt((s['Release Date'] || '').slice(0, 4));
+      return y >= era.years[0] && y <= era.years[1];
+    });
+    era.count = era.songs.length;
+    era.pct = songs.length > 0 ? (era.count / songs.length * 100).toFixed(0) : 0;
+  });
+
+  const grid = document.getElementById('era-grid');
+  eras.forEach(era => {
+    const el = document.createElement('div');
+    el.className = 'era-card';
+    el.style.borderColor = era.color + '33';
+    el.innerHTML = `
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:${era.color};opacity:0.6;border-radius:0 0 10px 10px;"></div>
+      <div style="margin-bottom:10px"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${era.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"></svg></div>
+      <div class="era-name" style="color:${era.color}">${era.name}</div>
+      <div class="era-years" style="color:var(--muted)">${era.years[0]}–${Math.min(era.years[1], new Date().getFullYear())}</div>
+      <div class="era-count">${era.count}</div>
+      <div class="era-pct" style="color:${era.color}">${era.pct}% of library</div>`;
+    grid.appendChild(el);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// FEATURE EVOLUTION OVER TIME
+// ═══════════════════════════════════════════════
+function buildEvolution(songs) {
+  // Group songs by YYYY-MM of when they were added
+  const byMonth = {};
+  songs.forEach(s => {
+    if (!s['Added At']) return;
+    const m = s['Added At'].slice(0, 7);
+    if (!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(s);
+  });
+
+  const months = Object.keys(byMonth).sort();
+  if (months.length < 2) return;
+
+  // Compute per-month averages
+  const features = [
+    { key: 'Energy',        field: 'Energy',        color: COLORS.red,    active: true },
+    { key: 'Valence',       field: 'Valence',        color: COLORS.yellow, active: true },
+    { key: 'Danceability',  field: 'Danceability',   color: COLORS.orange, active: true },
+    { key: 'Acousticness',  field: 'Acousticness',   color: COLORS.teal,   active: false },
+    { key: 'Speechiness',   field: 'Speechiness',    color: COLORS.pink,   active: false },
+    { key: 'Tempo (norm)',  field: 'Tempo',           color: COLORS.purple, active: false, norm: v => Math.min(1, (v - 60) / 150) },
+  ];
+
+  // Rolling average helper
+  function rolling(arr, w) {
+    return arr.map((_, i) => {
+      const slice = arr.slice(Math.max(0, i - w + 1), i + 1);
+      return slice.reduce((a,b) => a+b, 0) / slice.length;
+    });
+  }
+
+  features.forEach(f => {
+    f.rawValues = months.map(m => {
+      const grp = byMonth[m].map(s => {
+        const v = parseFloat(s[f.field]);
+        return isNaN(v) ? null : (f.norm ? f.norm(v) : v);
+      }).filter(v => v !== null);
+      return grp.length ? grp.reduce((a,b)=>a+b,0)/grp.length : null;
+    });
+    // Fill nulls with adjacent
+    f.rawValues = f.rawValues.map((v,i,a) => v !== null ? v : (a[i-1] ?? a[i+1] ?? 0.5));
+    f.values = rolling(f.rawValues, 3);
+  });
+
+  // ── Legend ──
+  const legend = document.getElementById('evo-legend');
+  features.forEach(f => {
+    const item = document.createElement('div');
+    item.className = 'lc-legend-item' + (f.active ? '' : ' hidden');
+    item.dataset.key = f.key;
+    item.innerHTML = `<div class="lc-dot" style="background:${f.color}"></div><span class="lc-toggle-label">${f.key}</span>`;
+    item.addEventListener('click', () => {
+      f.active = !f.active;
+      item.classList.toggle('hidden', !f.active);
+      drawEvoChart(features, months);
+    });
+    legend.appendChild(item);
+  });
+
+  // ── X labels ──
+  const xLabels = document.getElementById('evo-x-labels');
+  const showEvery = Math.max(1, Math.ceil(months.length / 10));
+  months.forEach((m, i) => {
+    const sp = document.createElement('span');
+    sp.textContent = i % showEvery === 0 ? m.slice(0, 7) : '';
+    xLabels.appendChild(sp);
+  });
+
+  drawEvoChart(features, months);
+
+  // ── Mood & Energy sub-charts ──
+  drawSingleEvoLine('mood-evo-canvas', 'mood-evo-labels', months, features.find(f=>f.key==='Valence').values, COLORS.yellow, 'Valence');
+  drawSingleEvoLine('energy-evo-canvas', 'energy-evo-labels', months, features.find(f=>f.key==='Energy').values, COLORS.red, 'Energy');
+
+  // ── Popularity over time ──
+  buildPopEvolution(byMonth, months);
+
+  // ── Artist discovery ──
+  buildArtistDiscovery(songs);
+}
+
+function drawEvoChart(features, months) {
+  const canvas = document.getElementById('evo-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = { top: 20, right: 20, bottom: 30, left: 40 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD.top + chartH * (1 - i / 4);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '10px DM Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText((i * 25) + '%', PAD.left - 4, y + 4);
+  }
+
+  // X grid (monthly ticks)
+  const showEvery = Math.max(1, Math.ceil(months.length / 12));
+  months.forEach((m, i) => {
+    if (i % showEvery === 0) {
+      const x = PAD.left + (i / (months.length - 1)) * chartW;
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + chartH); ctx.stroke();
+    }
+  });
+
+  // Draw lines
+  features.filter(f => f.active).forEach(f => {
+    ctx.beginPath();
+    f.values.forEach((v, i) => {
+      const x = PAD.left + (i / Math.max(1, months.length - 1)) * chartW;
+      const y = PAD.top + chartH * (1 - v);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = f.color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // Glow
+    ctx.save();
+    ctx.strokeStyle = f.color + '44';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    ctx.restore();
+
+    // End dot
+    const lastX = PAD.left + ((months.length - 1) / Math.max(1, months.length - 1)) * chartW;
+    const lastY = PAD.top + chartH * (1 - f.values[f.values.length - 1]);
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = f.color;
+    ctx.fill();
+  });
+}
+
+function drawSingleEvoLine(canvasId, labelsId, months, values, color, label) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = { top: 16, right: 16, bottom: 20, left: 36 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+  ctx.clearRect(0, 0, W, H);
+
+  // gradient fill under line
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + chartH);
+  grad.addColorStop(0, color + '33');
+  grad.addColorStop(1, color + '00');
+
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = PAD.left + (i / Math.max(1, months.length - 1)) * chartW;
+    const y = PAD.top + chartH * (1 - v);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  // close path for fill
+  const lastX2 = PAD.left + chartW, firstX2 = PAD.left;
+  ctx.lineTo(lastX2, PAD.top + chartH);
+  ctx.lineTo(firstX2, PAD.top + chartH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // line
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = PAD.left + (i / Math.max(1, months.length - 1)) * chartW;
+    const y = PAD.top + chartH * (1 - v);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // y axis labels
+  for (let i = 0; i <= 2; i++) {
+    const y = PAD.top + chartH * (1 - i / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '9px DM Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText((i * 50) + '%', PAD.left - 4, y + 3);
+  }
+
+  // x labels
+  const xLabels = document.getElementById(labelsId);
+  if (xLabels) {
+    xLabels.innerHTML = '';
+    const showEvery = Math.max(1, Math.ceil(months.length / 6));
+    months.forEach((m, i) => {
+      const sp = document.createElement('span');
+      sp.textContent = i % showEvery === 0 ? m.slice(0, 7) : '';
+      xLabels.appendChild(sp);
+    });
+  }
+}
+
+function buildPopEvolution(byMonth, months) {
+  const canvas = document.getElementById('pop-evo-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = { top: 16, right: 16, bottom: 20, left: 40 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+  ctx.clearRect(0, 0, W, H);
+
+  // build series
+  const avgPopSeries = months.map(m => {
+    const pops = byMonth[m].map(s => parseFloat(s['Popularity'])).filter(v => !isNaN(v));
+    return pops.length ? pops.reduce((a,b)=>a+b,0)/pops.length : null;
+  });
+  const mainstreamSeries = months.map(m => byMonth[m].filter(s => parseFloat(s['Popularity']) >= 70).length / byMonth[m].length * 100);
+  const undergroundSeries = months.map(m => byMonth[m].filter(s => parseFloat(s['Popularity']) < 40).length / byMonth[m].length * 100);
+
+  // Draw as bar chart (mainstream/underground stacked) + avg popularity line
+  const barW = chartW / months.length;
+  const maxVal = 100;
+
+  months.forEach((m, i) => {
+    const x = PAD.left + i * barW;
+    const mh = (mainstreamSeries[i] / maxVal) * chartH;
+    const uh = (undergroundSeries[i] / maxVal) * chartH;
+
+    // mainstream bar
+    ctx.fillStyle = COLORS.purple + '55';
+    ctx.fillRect(x + 1, PAD.top + chartH - mh, barW - 2, mh);
+
+    // underground bar (stacked on mainstream, below zero line)
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(x + 1, PAD.top + chartH - mh - uh, barW - 2, uh);
+  });
+
+  // avg popularity line (0-100 scale)
+  const filled = avgPopSeries.map((v, i, a) => v !== null ? v : (a[i-1] ?? a[i+1] ?? 50));
+  ctx.beginPath();
+  filled.forEach((v, i) => {
+    const x = PAD.left + (i + 0.5) * barW;
+    const y = PAD.top + chartH * (1 - v / 100);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = COLORS.green;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // y axis
+  for (let i = 0; i <= 2; i++) {
+    const y = PAD.top + chartH * (1 - i / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '9px DM Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(i * 50, PAD.left - 4, y + 3);
+  }
+
+  // x labels
+  const xLabels = document.getElementById('pop-evo-labels');
+  if (xLabels) {
+    xLabels.innerHTML = '';
+    const showEvery = Math.max(1, Math.ceil(months.length / 8));
+    months.forEach((m, i) => {
+      const sp = document.createElement('span');
+      sp.textContent = i % showEvery === 0 ? m.slice(0, 7) : '';
+      xLabels.appendChild(sp);
+    });
+  }
+}
+
+function buildArtistDiscovery(songs) {
+  // When was each artist first added?
+  const firstAdded = {};
+  const artistSongs = {};
+  songs.forEach(s => {
+    const artist = s['Artist Name(s)'].split(';')[0].trim();
+    const date = s['Added At'] || '';
+    if (!firstAdded[artist] || date < firstAdded[artist]) firstAdded[artist] = date;
+    if (!artistSongs[artist]) artistSongs[artist] = [];
+    artistSongs[artist].push(s);
+  });
+
+  const rows = Object.entries(firstAdded)
+    .sort((a, b) => a[1].localeCompare(b[1]))
+    .slice(0, 20)
+    .map(([artist, date]) => {
+      const grp = artistSongs[artist];
+      const avgPop = avg(grp.map(s => parseFloat(s['Popularity'])).filter(v => !isNaN(v)));
+      const avgEn  = avg(grp.map(s => parseFloat(s['Energy'])).filter(v => !isNaN(v)));
+      const avgVal = avg(grp.map(s => parseFloat(s['Valence'])).filter(v => !isNaN(v)));
+      return { artist, date: date.slice(0, 10), songs: grp.length, avgPop, avgEn, avgVal };
+    });
+
+  const tbody = document.getElementById('artist-discovery-body');
+  rows.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    const popColor = row.avgPop >= 70 ? COLORS.green : row.avgPop >= 45 ? COLORS.yellow : COLORS.muted || '#6b6b7a';
+    tr.innerHTML = `
+      <td style="color:var(--muted)">${i + 1}</td>
+      <td style="font-weight:600">${row.artist}</td>
+      <td style="color:var(--muted)">${row.date}</td>
+      <td style="color:var(--accent)">${row.songs}</td>
+      <td><span style="color:${popColor}">${isNaN(row.avgPop) ? '—' : row.avgPop.toFixed(0)}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:50px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
+            <div style="width:${(row.avgEn*100).toFixed(0)}%;height:100%;background:${COLORS.red}"></div>
+          </div>
+          <span style="color:var(--muted)">${isNaN(row.avgEn) ? '—' : (row.avgEn*100).toFixed(0)}%</span>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:50px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
+            <div style="width:${(row.avgVal*100).toFixed(0)}%;height:100%;background:${COLORS.yellow}"></div>
+          </div>
+          <span style="color:var(--muted)">${isNaN(row.avgVal) ? '—' : (row.avgVal*100).toFixed(0)}%</span>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+
+// ═══════════════════════════════════════════════
+// ARCHETYPE SHARE / SAVE / EXPLORE
+// ═══════════════════════════════════════════════
+
+function shareArchetype() {
+  const a = window._archetype;
+  if (!a) return;
+  const text = `My music archetype on VELVET: "${a.name}" — ${a.desc.slice(0, 100)}... Discover yours!`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast());
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast();
+  }
+}
+
+function showToast() {
+  const t = document.getElementById('share-toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function saveArchetypeCard() {
+  const a = window._archetype;
+  if (!a) return;
+
+  // Build a canvas card
+  const canvas = document.createElement('canvas');
+  canvas.width = 800; canvas.height = 440;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 800, 440);
+  bg.addColorStop(0, '#0d1a12');
+  bg.addColorStop(0.5, '#0f0f1f');
+  bg.addColorStop(1, '#1a0d1f');
+  ctx.fillStyle = bg;
+  ctx.roundRect(0, 0, 800, 440, 20);
+  ctx.fill();
+
+  // Glow blobs
+  const glow1 = ctx.createRadialGradient(160, 220, 0, 160, 220, 300);
+  glow1.addColorStop(0, a.color + '22');
+  glow1.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow1;
+  ctx.fillRect(0, 0, 800, 440);
+
+  // Border
+  ctx.strokeStyle = a.color + '44';
+  ctx.lineWidth = 1.5;
+  ctx.roundRect(1, 1, 798, 438, 20);
+  ctx.stroke();
+
+  // VELVET wordmark
+  ctx.font = 'bold 13px monospace';
+  ctx.fillStyle = '#1db954';
+  ctx.letterSpacing = '0.2em';
+  ctx.fillText('VELVET', 44, 52);
+
+  // Archetype label
+  ctx.font = '11px monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('YOUR LISTENER ARCHETYPE', 44, 100);
+
+  // Archetype name
+  ctx.font = 'bold 52px sans-serif';
+  ctx.fillStyle = '#f0efe8';
+  const nameParts = a.name.replace('The ', '').split(' ');
+  ctx.fillText('The', 44, 158);
+  ctx.fillStyle = a.color;
+  ctx.fillText(nameParts.slice(0).join(' '), 44, 218);
+
+  // Description
+  ctx.font = '15px monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  const words = a.desc.split(' ');
+  let line = '', y = 278, maxW = 500;
+  words.forEach(word => {
+    const test = line + word + ' ';
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line.trim(), 44, y);
+      line = word + ' '; y += 22;
+    } else { line = test; }
+    if (y > 360) return;
+  });
+  if (y <= 360) ctx.fillText(line.trim(), 44, y);
+
+  // Traits
+  ctx.font = '11px monospace';
+  let tx = 44;
+  (a.traits || []).forEach(trait => {
+    ctx.fillStyle = a.color + '33';
+    const w = ctx.measureText(trait).width + 20;
+    ctx.beginPath();
+    ctx.roundRect(tx, 395, w, 22, 11);
+    ctx.fill();
+    ctx.strokeStyle = a.color + '55';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = a.color;
+    ctx.fillText(trait, tx + 10, 410);
+    tx += w + 8;
+  });
+
+  // Download
+  const link = document.createElement('a');
+  link.download = 'velvet-archetype.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function openArchetypeExplorer() {
+  const modal = document.getElementById('arch-modal');
+  const grid = document.getElementById('arch-modal-grid');
+  const myArchetype = window._archetype;
+  const all = window._allArchetypes || [];
+
+  if (!grid.children.length) {
+    all.forEach(a => {
+      const isYou = a.name === (myArchetype && myArchetype.name);
+      const card = document.createElement('div');
+      card.className = 'arch-card' + (isYou ? ' is-you' : '');
+      card.style.borderColor = a.color + '33';
+      card.style.background = a.color + '08';
+      card.innerHTML = `
+        <div class="arch-card-icon" style="background:${a.color}18">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${a.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"></svg>
+        </div>
+        <div class="arch-card-name" style="color:${isYou ? a.color : 'var(--text)'}">${a.name}</div>
+        <div style="font-size:0.62rem;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace">${a.conditionLabel}</div>
+        <div class="arch-card-desc">${a.desc}</div>
+        <div class="arch-card-traits">
+          ${(a.traits||[]).map(t => `<span class="arch-trait-chip" style="border-color:${a.color}33;color:${a.color}aa">${t}</span>`).join('')}
+        </div>`;
+      grid.appendChild(card);
+    });
+    }
+
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeArchetypeExplorer(e) {
+  if (e && e.target !== document.getElementById('arch-modal')) return;
+  const modal = document.getElementById('arch-modal');
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── ROUNDRECT POLYFILL ──
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    const rad = Array.isArray(r) ? r[0] : r;
+    this.moveTo(x + rad, y);
+    this.lineTo(x + w - rad, y);
+    this.arcTo(x + w, y, x + w, y + rad, rad);
+    this.lineTo(x + w, y + h - rad);
+    this.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+    this.lineTo(x + rad, y + h);
+    this.arcTo(x, y + h, x, y + h - rad, rad);
+    this.lineTo(x, y + rad);
+    this.arcTo(x, y, x + rad, y, rad);
+    this.closePath();
+    return this;
+  };
+}
+
+// Patch buildAll to also set up the mood tooltip
+const _origBuildAll = buildAll;
+buildAll = function() {
+  _origBuildAll();
+  const moodCanvas = document.getElementById('mood-canvas');
+  if (moodCanvas) setupTooltip(moodCanvas, songs);
+};
+</script>
+</body>
+</html>
