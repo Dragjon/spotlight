@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VELVET — Know Your Sound</title>
+<title>SpotLight - Know Your Sound</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script>/* @license
 Papa Parse
@@ -1072,7 +1072,7 @@ License: MIT
 <div id="upload-screen">
   <div class="upload-inner">
 
-    <div class="upload-logo">VELVET</div>
+    <div class="upload-logo">SpotLight</div>
     <div class="upload-tagline">Know Your Sound</div>
 
     <!-- Drop zone -->
@@ -3343,11 +3343,11 @@ function buildArchetypeCanvas() {
   ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(48, 0); ctx.lineTo(W - 48, 0); ctx.stroke();
 
-  // ── VELVET wordmark ──
+  // ── SpotLight wordmark ──
   ctx.font = '700 14px "DM Mono", monospace';
   ctx.fillStyle = '#1db954';
   ctx.letterSpacing = '0.3em';
-  ctx.fillText('VELVET', 48, 54);
+  ctx.fillText('SpotLight', 48, 54);
 
   // ── "Your listener archetype" label ──
   ctx.font = '500 11px "DM Mono", monospace';
@@ -3439,7 +3439,7 @@ function buildArchetypeCanvas() {
   ctx.font = '400 11px "DM Mono", monospace';
   ctx.fillStyle = 'rgba(255,255,255,0.15)';
   ctx.textAlign = 'right';
-  ctx.fillText('velvet.app · know your sound', W - 48, H - 28);
+  ctx.fillText('spotlight.app · know your sound', W - 48, H - 28);
   ctx.textAlign = 'left';
 
   return Promise.resolve(canvas);
@@ -3456,12 +3456,12 @@ function shareArchetype() {
   buildArchetypeCanvas().then(canvas => {
     if (!canvas) return;
 
-    const title = 'VELVET — ' + a.name;
-    const text  = 'My music archetype is "' + a.name + '" on VELVET — Know Your Sound';
+    const title = 'SpotLight — ' + a.name;
+    const text  = 'My music archetype is "' + a.name + '" on SpotLight — Know Your Sound';
 
     // Convert canvas to blob for sharing
     canvas.toBlob(blob => {
-      const file = new File([blob], 'velvet-archetype.png', { type: 'image/png' });
+      const file = new File([blob], 'spotlight-archetype.png', { type: 'image/png' });
 
       // Check if browser supports sharing files
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -3485,7 +3485,7 @@ function shareArchetype() {
       // Fallback 2: download the image + copy text
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = 'velvet-archetype.png';
+      link.download = 'spotlight-archetype.png';
       link.href = url; link.click();
       showToast('Image downloaded!');
     }, 'image/png');
@@ -3499,7 +3499,7 @@ function saveArchetypeCard() {
   buildArchetypeCanvas().then(canvas => {
     if (!canvas) return;
     const link = document.createElement('a');
-    link.download = 'velvet-archetype.png';
+    link.download = 'spotlight-archetype.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
     showToast('Card saved!');
