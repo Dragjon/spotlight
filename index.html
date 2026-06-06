@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VELVET - Know Your Sound</title>
+<title>VELVET — Know Your Sound</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script>/* @license
 Papa Parse
@@ -3161,7 +3161,7 @@ function buildArchetypeCanvas() {
   ctx.font = '400 11px "DM Mono", monospace';
   ctx.fillStyle = 'rgba(255,255,255,0.15)';
   ctx.textAlign = 'right';
-  ctx.fillText('velvet · know your sound', W - 48, H - 28);
+  ctx.fillText('velvet.app · know your sound', W - 48, H - 28);
   ctx.textAlign = 'left';
 
   return Promise.resolve(canvas);
@@ -4029,9 +4029,8 @@ function switchStatsTab(tabId) {
       observer.observe(el);
     });
   }
-  // Scroll to top of tab area
-  const nav = document.getElementById('stats-tabs-nav');
-  if (nav) nav.scrollIntoView({behavior:'smooth', block:'start'});
+  // Scroll to top of page
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 </script>
