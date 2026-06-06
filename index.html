@@ -3503,18 +3503,57 @@ function buildArchetypeCanvas() {
   ctx.fillStyle = 'rgba(240,239,232,0.55)';
   ctx.fillText('The', 48, 164);
 
-  // ── Archetype name (split words for big display) ──
+  // ── Archetype name (split words, scale to fit left column, fade right) ──
+  const nameColRight = 490; // right edge of left column — description starts at 520
+  const nameColWidth = nameColRight - 48;
   const nameParts = a.name.replace(/^The\s+/, '').split(' ');
-  ctx.font = '800 68px "Syne", sans-serif';
-  ctx.fillStyle = a.color;
-  // If two words, stack them
-  if (nameParts.length >= 2) {
-    ctx.fillText(nameParts[0], 48, 240);
-    ctx.fillStyle = 'rgba(240,239,232,0.9)';
-    ctx.fillText(nameParts.slice(1).join(' '), 48, 316);
-  } else {
-    ctx.fillText(nameParts[0], 48, 280);
+
+  // Find font size that fits the widest word within the column
+  let fontSize = 68;
+  for (let fs = 68; fs >= 32; fs -= 2) {
+    ctx.font = `800 ${fs}px "Syne", sans-serif`;
+    const maxW = Math.max(...nameParts.map(w => ctx.measureText(w).width));
+    if (maxW <= nameColWidth) { fontSize = fs; break; }
   }
+  ctx.font = `800 ${fontSize}px "Syne", sans-serif`;
+  const lineH = fontSize * 1.15;
+
+  // Draw each word on its own line
+  const nameLines = nameParts;
+  const totalNameH = nameLines.length * lineH;
+  // Start so the block is vertically centred between y=130 and y=370
+  let nameY = 130 + ((370 - 130) - totalNameH) / 2 + fontSize;
+
+  nameLines.forEach((word, i) => {
+    // Alternate colour: first word gets archetype colour, rest get off-white
+    const wordColor = i === 0 ? a.color : 'rgba(240,239,232,0.9)';
+
+    // Draw the text
+    ctx.save();
+    // Clip to left column so text never bleeds into description
+    ctx.beginPath();
+    ctx.rect(48, 0, nameColWidth + 80, H); // give a little extra then fade covers the rest
+    ctx.clip();
+    ctx.fillStyle = wordColor;
+    ctx.fillText(word, 48, nameY);
+    ctx.restore();
+
+    // Gradient fade over the right portion of the name
+    const textW = ctx.measureText(word).width;
+    const fadeStart = Math.min(48 + textW - 60, nameColRight - 60);
+    const fadeEnd   = nameColRight + 40;
+    if (fadeStart < fadeEnd) {
+      const fade = ctx.createLinearGradient(fadeStart, 0, fadeEnd, 0);
+      fade.addColorStop(0, 'rgba(0,0,0,0)');
+      fade.addColorStop(1, '#0d0d1a'); // match bg mid-colour
+      ctx.save();
+      ctx.fillStyle = fade;
+      ctx.fillRect(fadeStart, nameY - fontSize - 4, fadeEnd - fadeStart + 4, lineH + 8);
+      ctx.restore();
+    }
+
+    nameY += lineH;
+  });
 
   // ── Trait chips ──
   ctx.font = '500 11px "DM Mono", monospace';
