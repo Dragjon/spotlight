@@ -954,7 +954,7 @@ License: MIT
       <div style="font-size:0.72rem;color:#f0efe8;font-weight:600;">One-time setup (2 min)</div>
       <div style="font-size:0.65rem;color:#6b6b7a;line-height:1.7;">
         1. Go to <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:#1db954;">developer.spotify.com/dashboard</a> → Create app<br>
-        2. Add Redirect URI: <code id="redirect-uri-show" style="color:#38bdf8;font-size:0.62rem;">loading…</code><br>
+        2. Add Redirect URI: <code id="redirect-uri-show" style="color:#38bdf8;font-size:0.62rem;word-break:break-all;">loading…</code><br>
         3. Copy your Client ID and paste below
       </div>
       <input class="setup-input" id="spotify-client-id" type="text" placeholder="Paste Client ID…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:9px 12px;color:#f0efe8;font-family:inherit;font-size:0.78rem;outline:none;" />
@@ -1364,40 +1364,34 @@ License: MIT
 let songs = [];
 
 // ═══════════════════════════════════════════════
-// SPOTIFY OAUTH — PKCE popup flow
-// ═══════════════════════════════════════════════
-// HOW IT WORKS:
-//   • We use a hardcoded Client ID registered with redirect URI
-//     pointing to a tiny hosted callback page (velvet-callback.netlify.app)
-//   • That page reads the auth code from the URL and postMessages it back
-//   • We exchange the code for a token entirely client-side (PKCE)
-//   • Zero backend, zero setup for the user — just click Sign in
-// ─────────────────────────────────────────────
-// To self-host: register your own Spotify app at
-//   developer.spotify.com/dashboard
-// Add redirect URI: https://YOUR-DOMAIN/callback.html
-// Then update CLIENT_ID and REDIRECT_URI below.
+// SPOTIFY OAUTH — same-page PKCE redirect flow
+// Redirect URI = this page's own URL (index.html)
+// No callback.html needed.
 // ═══════════════════════════════════════════════
 
-const SPOTIFY_CLIENT_ID  = 'YOUR_CLIENT_ID_HERE';
-// Hosted callback page that postMessages the code back to this window
-const SPOTIFY_REDIRECT   = 'https://velvet-callback.netlify.app/';
-const SPOTIFY_SCOPES     = 'user-library-read';
+const SPOTIFY_CLIENT_ID = 'YOUR_CLIENT_ID_HERE';
+const SPOTIFY_SCOPES    = 'user-library-read';
 
-// PKCE helpers
+// The redirect URI is always this page itself — auto-detected at runtime
+function getRedirectUri() {
+  return window.location.origin + window.location.pathname;
+}
+
+// ── PKCE helpers ──
 async function generateCodeChallenge(verifier) {
-  const enc = new TextEncoder().encode(verifier);
+  const enc  = new TextEncoder().encode(verifier);
   const hash = await crypto.subtle.digest('SHA-256', enc);
   return btoa(String.fromCharCode(...new Uint8Array(hash)))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 function randomString(len) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const arr = new Uint8Array(len);
   crypto.getRandomValues(arr);
   return Array.from(arr, v => chars[v % chars.length]).join('');
 }
 
+// ── Save Client ID entered by user ──
 function saveClientIdAndAuth() {
   const id = document.getElementById('spotify-client-id').value.trim();
   if (!id) return;
@@ -1406,17 +1400,18 @@ function saveClientIdAndAuth() {
   startSpotifyAuth(id);
 }
 
+// ── Start auth — redirect to Spotify, come back to same page ──
 async function startSpotifyAuth(clientIdOverride) {
-  // Try saved client ID first, then the hardcoded one
-  const savedId  = clientIdOverride || localStorage.getItem('velvet_client_id') || SPOTIFY_CLIENT_ID;
-  const isPlaceholder = savedId === 'YOUR_CLIENT_ID_HERE';
+  const clientId = clientIdOverride
+    || localStorage.getItem('velvet_client_id')
+    || SPOTIFY_CLIENT_ID;
 
-  if (isPlaceholder) {
-    // Show setup panel so user can enter their own ID
+  if (clientId === 'YOUR_CLIENT_ID_HERE') {
+    // No Client ID yet — show setup panel
     const note = document.getElementById('spotify-setup-note');
-    const uri  = document.getElementById('redirect-uri-show');
+    const uriEl = document.getElementById('redirect-uri-show');
     note.style.display = 'flex';
-    if (uri) uri.textContent = window.location.href.split('?')[0].split('#')[0];
+    if (uriEl) uriEl.textContent = getRedirectUri();
     return;
   }
 
@@ -1424,91 +1419,64 @@ async function startSpotifyAuth(clientIdOverride) {
   const challenge = await generateCodeChallenge(verifier);
   const state     = randomString(16);
 
-  sessionStorage.setItem('pkce_verifier', verifier);
-  sessionStorage.setItem('pkce_state',    state);
+  // Persist PKCE state across the page redirect
+  sessionStorage.setItem('pkce_verifier',   verifier);
+  sessionStorage.setItem('pkce_state',      state);
+  sessionStorage.setItem('pkce_client_id',  clientId);
 
   const authUrl = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
     response_type:         'code',
-    client_id:             savedId,
+    client_id:             clientId,
     scope:                 SPOTIFY_SCOPES,
-    redirect_uri:          SPOTIFY_REDIRECT,
+    redirect_uri:          getRedirectUri(),
     code_challenge_method: 'S256',
     code_challenge:        challenge,
     state:                 state,
   });
 
-  // Open Spotify login in a popup
-  const popup = window.open(authUrl, 'spotify-auth',
-    'width=480,height=700,left=' + ((screen.width-480)/2) +
-    ',top=' + ((screen.height-700)/2));
-
-  if (!popup) {
-    // Popup blocked — fall back to redirect
-    sessionStorage.setItem('pkce_verifier', verifier);
-    sessionStorage.setItem('pkce_state', state);
-    window.location.href = authUrl.replace(
-      SPOTIFY_REDIRECT,
-      window.location.href.split('?')[0].split('#')[0]
-    );
-    return;
-  }
-
-  showStatus('loading', 'Waiting for Spotify login…');
-
-  // Listen for the code postMessaged back from the callback page
-  window.addEventListener('message', async function handler(e) {
-    if (!e.data || e.data.type !== 'spotify_callback') return;
-    window.removeEventListener('message', handler);
-    popup.close();
-
-    if (e.data.error) {
-      showStatus('error', 'Spotify denied access: ' + e.data.error);
-      return;
-    }
-    if (e.data.state !== state) {
-      showStatus('error', 'State mismatch — possible CSRF. Try again.');
-      return;
-    }
-
-    await exchangeAndFetch(e.data.code);
-  });
-
-  // Fallback: if popup is closed manually
-  const closed = setInterval(() => {
-    if (popup.closed) {
-      clearInterval(closed);
-      const st = document.getElementById('status-text');
-      if (st && st.textContent.includes('Waiting')) {
-        showStatus('error', 'Login window closed. Try again.');
-      }
-    }
-  }, 800);
+  // Full-page redirect to Spotify — returns to this same URL
+  window.location.href = authUrl;
 }
 
-// Handle same-page redirect fallback (when popup is blocked)
+// ── Called on page load — handles the ?code= Spotify sends back ──
 async function handleSpotifyCallback() {
   const params = new URLSearchParams(window.location.search);
   const code   = params.get('code');
   const state  = params.get('state');
-  if (!code) return;
+  const error  = params.get('error');
 
+  if (!code && !error) return; // normal page load, nothing to do
+
+  // Strip the ?code=... from the URL immediately so refresh doesn't re-trigger
   window.history.replaceState({}, '', window.location.pathname);
-  showStatus('loading', 'Completing sign-in…');
-  document.getElementById('upload-screen').style.display = 'flex';
 
-  const savedState = sessionStorage.getItem('pkce_state');
-  if (savedState && state !== savedState) {
-    showStatus('error', 'State mismatch. Try again.');
+  if (error) {
+    document.getElementById('upload-screen').style.display = 'flex';
+    showStatus('error', 'Spotify denied access: ' + error);
     return;
   }
 
-  await exchangeAndFetch(code);
-}
+  const savedState = sessionStorage.getItem('pkce_state');
+  const verifier   = sessionStorage.getItem('pkce_verifier');
+  const clientId   = sessionStorage.getItem('pkce_client_id')
+                     || localStorage.getItem('velvet_client_id')
+                     || SPOTIFY_CLIENT_ID;
 
-async function exchangeAndFetch(code) {
-  const verifier = sessionStorage.getItem('pkce_verifier');
-  showStatus('loading', 'Signing in…');
+  // Show the upload screen while we finish the flow
+  document.getElementById('upload-screen').style.display = 'flex';
+  showStatus('loading', 'Completing sign-in…');
 
+  if (savedState && state !== savedState) {
+    showStatus('error', 'State mismatch — please try again.');
+    return;
+  }
+
+  if (!verifier) {
+    showStatus('error', 'Session expired — please try again.');
+    return;
+  }
+
+  // Exchange code → access token
   try {
     const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
@@ -1516,8 +1484,8 @@ async function exchangeAndFetch(code) {
       body: new URLSearchParams({
         grant_type:    'authorization_code',
         code,
-        redirect_uri:  SPOTIFY_REDIRECT,
-        client_id:     SPOTIFY_CLIENT_ID,
+        redirect_uri:  getRedirectUri(),
+        client_id:     clientId,
         code_verifier: verifier,
       }),
     });
@@ -1528,10 +1496,13 @@ async function exchangeAndFetch(code) {
     }
 
     const { access_token } = await tokenRes.json();
+    sessionStorage.removeItem('pkce_verifier');
+    sessionStorage.removeItem('pkce_state');
+
     await fetchSpotifyLibrary(access_token);
 
   } catch (e) {
-    showStatus('error', 'Error: ' + e.message);
+    showStatus('error', 'Sign-in failed: ' + e.message);
   }
 }
 
