@@ -1207,22 +1207,7 @@ License: MIT
         <div class="profile-traits" id="profile-traits"></div>
       </div>
 
-      <!-- Archetype Explorer Modal -->
-      <div class="arch-modal-overlay" id="arch-modal" onclick="closeArchetypeExplorer(event)">
-        <div class="arch-modal">
-          <div class="arch-modal-header">
-            <div>
-              <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;letter-spacing:-0.02em">All Listener Archetypes</div>
-              <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">Which one sounds like you?</div>
-            </div>
-            <button onclick="closeArchetypeExplorer()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M18 6 6 18" />
-  <path d="m6 6 12 12" /></svg>
-            </button>
-          </div>
-          <div class="arch-modal-grid" id="arch-modal-grid"></div>
-        </div>
-      </div>
+
 
       <!-- Share Toast -->
       <div class="share-toast" id="share-toast">
@@ -2671,51 +2656,203 @@ function buildProfile(songs, nums, genreEntries) {
   const explicit = songs.filter(s => s['Explicit'] === 'true').length / songs.length;
 
   // ── Archetype Classification ──
+  const numGenres = genreEntries.filter(([g]) => g !== "(no genre)").length;
   const archetypes = [
+    // ── Highly specific archetypes first ──
     {
-      name: "The Euphoric Escapist", svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="4"/> <path d="M12 2v2"/> <path d="M12 20v2"/> <path d="m4.93 4.93 1.41 1.41"/> <path d="m17.66 17.66 1.41 1.41"/> <path d="M2 12h2"/> <path d="M20 12h2"/> <path d="m6.34 17.66-1.41 1.41"/> <path d="m19.07 4.93-1.41 1.41"/></svg>`,
+      name: "The Rave Prophet",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+      condition: avgEnergy > 0.78 && avgDance > 0.72 && avgValence > 0.55 && avgTempo > 118,
+      desc: "You don't just listen to music — you become it. Your library is a relentless surge of high-BPM euphoria built for dark rooms, strobe lights, and 4am revelations. Every track is a drop waiting to happen.",
+      color: COLORS.yellow,
+      traits: ["Maximum Energy", "Club-Ready", "High BPM", "Euphoric"],
+      conditionLabel: "Energy >78% · Dance >72% · Valence >55% · Tempo >118 BPM",
+    },
+    {
+      name: "The Dark Ritualist",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
+      condition: avgValence < 0.3 && avgEnergy > 0.65 && avgAcoustic < 0.25,
+      desc: "Heavy, electric, and unafraid of the void. You gravitate toward music that channels aggression, tension, and the beauty of darkness. Your library is a controlled storm — intense but purposeful.",
+      color: COLORS.purple,
+      traits: ["Dark", "High Energy", "Electric", "Intense"],
+      conditionLabel: "Valence <30% · Energy >65% · Acoustic <25%",
+    },
+    {
+      name: "The Coffeehouse Philosopher",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>`,
+      condition: avgAcoustic > 0.55 && avgEnergy < 0.45 && avgValence > 0.38 && avgValence < 0.65,
+      desc: "Warm tones, fingerpicked guitars, and lyrics that make you stare out the window. You soundtrack your inner monologue with gentle, honest music — the kind that feels like a conversation with someone who really gets it.",
+      color: "#f59e0b",
+      traits: ["Acoustic", "Warm", "Lyrical", "Reflective"],
+      conditionLabel: "Acoustic >55% · Energy <45% · Valence 38–65%",
+    },
+    {
+      name: "The Hype Machine",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="m3 11 19-9-9 19-2-8-8-2z"/></svg>`,
+      condition: avgPop > 78 && avgEnergy > 0.68 && avgDance > 0.65,
+      desc: "You stay on the pulse. Your library reads like a Billboard chart come to life — the hits, the anthems, the songs everyone will know by next month. You don't follow trends; you are the trend.",
+      color: COLORS.orange,
+      traits: ["Chart-Topping", "High Energy", "Danceable", "Mainstream"],
+      conditionLabel: "Popularity >78 · Energy >68% · Dance >65%",
+    },
+    {
+      name: "The Midnight Driver",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 22a10 10 0 0 1-10-10"/><path d="M12 8v4l3 3"/></svg>`,
+      condition: avgValence < 0.45 && avgEnergy > 0.5 && avgEnergy < 0.72 && avgTempo > 95,
+      desc: "Made for empty roads and city lights at 2am. Your music hits that sweet spot between brooding and kinetic — not quite sad, not quite celebratory. Just moving forward, alone, with the volume up.",
+      color: COLORS.blue,
+      traits: ["Moody", "Mid-Tempo", "Atmospheric", "Nocturnal"],
+      conditionLabel: "Valence <45% · Energy 50–72% · Tempo >95 BPM",
+    },
+    {
+      name: "The Euphoric Escapist",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
       condition: avgEnergy > 0.65 && avgValence > 0.58 && avgDance > 0.6,
       desc: "Music is your portal to another dimension. You gravitate toward tracks that lift you up, fill rooms with energy, and make even mundane moments feel cinematic. Your library is a carefully curated happiness machine.",
-      color: COLORS.yellow,
-      traits: ["High Energy", "Joyful", "Danceable", "Mainstream"],
+      color: "#fbbf24",
+      traits: ["High Energy", "Joyful", "Danceable", "Uplifting"],
       conditionLabel: "Energy >65% · Valence >58% · Dance >60%",
     },
     {
-      name: "The Melancholy Poet", svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
+      name: "The Melancholy Poet",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
       condition: avgValence < 0.42 && avgAcoustic > 0.3,
-      desc: "You find beauty in the bittersweet. Your songs carry weight, emotion, and lyrical depth. You don't shy away from sadness - you lean into it, finding catharsis and truth in every minor chord.",
+      desc: "You find beauty in the bittersweet. Your songs carry weight, emotion, and lyrical depth. You don't shy away from sadness — you lean into it, finding catharsis and truth in every minor chord.",
       color: COLORS.purple,
       traits: ["Dark Themes", "Acoustic", "Lyrical Depth", "Introspective"],
       conditionLabel: "Valence <42% · Acousticness >30%",
     },
     {
-      name: "The Chill Architect", svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
-      condition: avgEnergy < 0.55 && avgAcoustic > 0.35 && avgValence > 0.35,
-      desc: "You build sonic atmospheres. Your taste leans toward music that breathes - unhurried, textured, acoustic. You use music as a backdrop for focus, creativity, or quiet contemplation.",
+      name: "The Groove Scientist",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+      condition: avgDance > 0.72 && avgTempo > 110 && avgEnergy > 0.6,
+      desc: "Rhythm is your native language. You live for the lock — that moment when kick drum, bassline, and melody sync into something undeniable. You probably tap your foot constantly without realising it.",
+      color: COLORS.orange,
+      traits: ["Highly Danceable", "Fast Tempo", "Groovy", "Rhythmic"],
+      conditionLabel: "Dance >72% · Tempo >110 BPM · Energy >60%",
+    },
+    {
+      name: "The Chill Architect",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+      condition: avgEnergy < 0.5 && avgAcoustic > 0.35 && avgValence > 0.35,
+      desc: "You build sonic atmospheres. Your taste leans toward music that breathes — unhurried, textured, and warm. You use music as a backdrop for focus, creativity, or quiet contemplation.",
       color: COLORS.teal,
       traits: ["Low Energy", "Acoustic", "Contemplative", "Textured"],
-      conditionLabel: "Energy <55% · Acoustic >35% · Valence >35%",
+      conditionLabel: "Energy <50% · Acoustic >35% · Valence >35%",
     },
     {
-      name: "The Rhythm Seeker", svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
-      condition: avgDance > 0.67 && avgTempo > 110,
-      desc: "Beat-first, always. You gravitate toward music with undeniable groove - rhythms that lock in and won't let go. Whether consciously or not, you're always moving to the music in your head.",
-      color: COLORS.orange,
-      traits: ["Danceable", "Fast Tempo", "Groovy", "Rhythmic"],
-      conditionLabel: "Dance >67% · Tempo >110 BPM",
-    },
-    {
-      name: "The Indie Discoverer", svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="11" cy="11" r="8"/> <path d="m21 21-4.3-4.3"/></svg>`,
-      condition: avgPop < 65 && genreEntries.filter(([g]) => g !== "(no genre)").length > 5,
-      desc: "You live for the find. The underground track nobody else has heard. The artist about to blow up. Your library reads like a curated taste map - eclectic, intentional, and ahead of the curve.",
+      name: "The Indie Discoverer",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+      condition: avgPop < 58 && numGenres > 5,
+      desc: "You live for the find. The underground track nobody else has heard. The artist about to blow up. Your library reads like a curated taste map — eclectic, intentional, and reliably ahead of the curve.",
       color: COLORS.pink,
       traits: ["Low Popularity", "Genre Diverse", "Eclectic", "Tastemaker"],
-      conditionLabel: "Avg Popularity <65 · 5+ Genres",
+      conditionLabel: "Avg Popularity <58 · 5+ Genres",
     },
     {
-      name: "The Emotional Nomad", svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+      name: "The Nostalgia Keeper",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>`,
+      condition: avgPop < 60 && avgAcoustic > 0.3 && avgValence > 0.45,
+      desc: "You carry your music like a photograph. Songs aren't just sounds — they're time capsules, each one tied to a specific feeling, place, or version of yourself. Your library is a living journal.",
+      color: "#fb923c",
+      traits: ["Sentimental", "Acoustic-leaning", "Warm", "Timeless"],
+      conditionLabel: "Popularity <60 · Acoustic >30% · Valence >45%",
+    },
+    {
+      name: "The Focus Monk",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`,
+      condition: avgEnergy < 0.48 && avgAcoustic > 0.4 && avgDance < 0.5 && avgValence < 0.55,
+      desc: "Music is a tool for you. You curate with intention — low distraction, high atmosphere. Your library is practically engineered for deep work, long reading sessions, and the kind of flow state most people only dream about.",
+      color: "#06b6d4",
+      traits: ["Low Energy", "Non-Distracting", "Acoustic", "Ambient"],
+      conditionLabel: "Energy <48% · Acoustic >40% · Dance <50%",
+    },
+    {
+      name: "The Anthemic Believer",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L6 21"/><circle cx="17" cy="7" r="5"/></svg>`,
+      condition: avgEnergy > 0.68 && avgValence > 0.62 && avgPop > 68,
+      desc: "You believe in the power of a great chorus. Your library is full of songs made to be sung out loud — windows-down, fists-in-the-air, sing-every-word anthems. Music, to you, is communal joy.",
+      color: "#eab308",
+      traits: ["Anthemic", "High Energy", "Joyful", "Crowd-Pleasing"],
+      conditionLabel: "Energy >68% · Valence >62% · Popularity >68",
+    },
+    {
+      name: "The Brooding Introvert",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+      condition: avgValence < 0.38 && avgEnergy < 0.55 && avgAcoustic > 0.25,
+      desc: "Quiet, heavy, and honest. Your music doesn't perform — it just is. You're drawn to artists who sound like they're working something out, and your library is a space for thinking, not entertaining.",
+      color: "#818cf8",
+      traits: ["Low Valence", "Quiet Energy", "Introspective", "Raw"],
+      conditionLabel: "Valence <38% · Energy <55% · Acoustic >25%",
+    },
+    {
+      name: "The Genre Anarchist",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/></svg>`,
+      condition: numGenres > 8 && avgPop < 70,
+      desc: "Genres are a cage and you've broken out of every one of them. Your library zigzags across sonic universes with total confidence. People ask you what you listen to and you just say 'everything' — and actually mean it.",
+      color: "#ec4899",
+      traits: ["Hyper-Eclectic", "Genre-Fluid", "Adventurous", "Unpredictable"],
+      conditionLabel: "8+ Genres · Popularity <70",
+    },
+    {
+      name: "The Soulful Purist",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+      condition: avgValence > 0.48 && avgValence < 0.72 && avgAcoustic > 0.28 && avgEnergy < 0.65 && avgPop < 72,
+      desc: "Feeling is everything. You chase the music that makes your chest ache in the best way — raw vocals, real instruments, songs that sound like they cost someone something. Production is decoration; soul is the point.",
+      color: "#ef4444",
+      traits: ["Soulful", "Acoustic-leaning", "Emotionally Rich", "Authentic"],
+      conditionLabel: "Valence 48–72% · Acoustic >28% · Energy <65%",
+    },
+    {
+      name: "The Underground Archivist",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a3e635" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`,
+      condition: avgPop < 48 && numGenres > 4,
+      desc: "You don't discover artists — you excavate them. Deep cuts, obscure releases, b-sides from 2009. You treat music history like a library and yourself as its librarian. Popularity is practically a red flag.",
+      color: "#84cc16",
+      traits: ["Very Obscure", "Deep Cuts", "Niche", "Passionate"],
+      conditionLabel: "Avg Popularity <48 · 4+ Genres",
+    },
+    {
+      name: "The Energy Vampire",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+      condition: avgEnergy > 0.75 && avgValence < 0.45,
+      desc: "Maximum intensity, minimum sunshine. Your music is a wall of force — dense, electric, relentless. You don't need it to be happy; you need it to be powerful. Your library runs on pure voltage.",
+      color: "#f43f5e",
+      traits: ["Maximum Energy", "Dark Mood", "Intense", "Aggressive"],
+      conditionLabel: "Energy >75% · Valence <45%",
+    },
+    {
+      name: "The Daydream Pop Kid",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f9a8d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>`,
+      condition: avgValence > 0.6 && avgEnergy > 0.5 && avgEnergy < 0.72 && avgPop > 60 && avgDance > 0.55,
+      desc: "Life's a music video and you're always in the lead role. Your library is bright, catchy, and unashamedly feel-good — synths, hooks, and choruses designed to get stuck in your head for the rest of the week.",
+      color: "#f9a8d4",
+      traits: ["Pop-Driven", "Upbeat", "Hooky", "Feel-Good"],
+      conditionLabel: "Valence >60% · Energy 50–72% · Pop >60 · Dance >55%",
+    },
+    {
+      name: "The Sonic Minimalist",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="5" x2="19" y1="12" y2="12"/></svg>`,
+      condition: avgEnergy < 0.4 && avgAcoustic > 0.5 && avgDance < 0.45,
+      desc: "Less is more, and you've never needed convincing. Your library is full of space — silence used as intentionally as sound. You're drawn to artists who trust the listener enough to leave room to breathe.",
+      color: "#94a3b8",
+      traits: ["Minimal", "Sparse", "Acoustic", "Slow-Paced"],
+      conditionLabel: "Energy <40% · Acoustic >50% · Dance <45%",
+    },
+    {
+      name: "The Rhythm Seeker",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+      condition: avgDance > 0.63 && avgTempo > 105,
+      desc: "Beat-first, always. You gravitate toward music with undeniable groove — rhythms that lock in and won't let go. Whether consciously or not, you're always moving to the music in your head.",
+      color: COLORS.orange,
+      traits: ["Danceable", "Fast Tempo", "Groovy", "Rhythmic"],
+      conditionLabel: "Dance >63% · Tempo >105 BPM",
+    },
+    {
+      name: "The Emotional Nomad",
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
       condition: true,
-      desc: "Your taste defies easy categorization. You move between moods, genres, and energies with ease. One moment introspective, the next euphoric - your library is a full emotional atlas.",
+      desc: "Your taste defies easy categorization. You move between moods, genres, and energies with ease. One moment introspective, the next euphoric — your library is a full emotional atlas. You contain multitudes.",
       color: COLORS.blue,
       traits: ["Versatile", "Mood-Driven", "Eclectic", "Balanced"],
       conditionLabel: "Default — the most universal listener",
@@ -3512,26 +3649,27 @@ function openArchetypeExplorer() {
   const myArchetype = window._archetype;
   const all = window._allArchetypes || [];
 
-  if (!grid.children.length) {
-    all.forEach(a => {
-      const isYou = a.name === (myArchetype && myArchetype.name);
-      const card = document.createElement('div');
-      card.className = 'arch-card' + (isYou ? ' is-you' : '');
-      card.style.borderColor = a.color + '33';
-      card.style.background = a.color + '08';
-      card.innerHTML = `
-        <div class="arch-card-icon" style="background:${a.color}18">
-          ${a.svg}
-        </div>
-        <div class="arch-card-name" style="color:${isYou ? a.color : 'var(--text)'}">${a.name}</div>
-        <div style="font-size:0.62rem;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace">${a.conditionLabel}</div>
-        <div class="arch-card-desc">${a.desc}</div>
-        <div class="arch-card-traits">
-          ${(a.traits||[]).map(t => `<span class="arch-trait-chip" style="border-color:${a.color}33;color:${a.color}aa">${t}</span>`).join('')}
-        </div>`;
-      grid.appendChild(card);
-    });
-    }
+  if (!all.length) return;
+
+  grid.innerHTML = '';
+  all.forEach(a => {
+    const isYou = a.name === (myArchetype && myArchetype.name);
+    const card = document.createElement('div');
+    card.className = 'arch-card' + (isYou ? ' is-you' : '');
+    card.style.borderColor = a.color + '33';
+    card.style.background = a.color + '08';
+    card.innerHTML = `
+      <div class="arch-card-icon" style="background:${a.color}18">
+        ${a.svg}
+      </div>
+      <div class="arch-card-name" style="color:${isYou ? a.color : 'var(--text)'}">${a.name}</div>
+      <div style="font-size:0.62rem;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace">${a.conditionLabel}</div>
+      <div class="arch-card-desc">${a.desc}</div>
+      <div class="arch-card-traits">
+        ${(a.traits||[]).map(t => `<span class="arch-trait-chip" style="border-color:${a.color}33;color:${a.color}aa">${t}</span>`).join('')}
+      </div>`;
+    grid.appendChild(card);
+  });
 
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -4367,5 +4505,21 @@ function switchStatsTab(tabId) {
 }
 
 </script>
+
+<!-- Archetype Explorer Modal — at body level to escape overflow:hidden on .profile-card -->
+<div class="arch-modal-overlay" id="arch-modal" onclick="closeArchetypeExplorer(event)">
+  <div class="arch-modal">
+    <div class="arch-modal-header">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;letter-spacing:-0.02em">All Listener Archetypes</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">Which one sounds like you?</div>
+      </div>
+      <button onclick="closeArchetypeExplorer()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="arch-modal-grid" id="arch-modal-grid"></div>
+  </div>
+</div>
 </body>
 </html>
