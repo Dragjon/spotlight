@@ -39,67 +39,170 @@ License: MIT
     overflow-x: hidden;
   }
 
-  /* ── NOISE OVERLAY ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none; z-index: 0; opacity: 0.4;
+  /* ── BACKGROUND CANVAS ── */
+  #bg-canvas {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none; width: 100%; height: 100%;
   }
 
   /* ── UPLOAD SCREEN ── */
   #upload-screen {
     position: fixed; inset: 0; z-index: 100;
-    background: var(--bg);
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 32px;
+    align-items: center; justify-content: center;
+    gap: 0;
+    padding: 40px 20px;
+    overflow-y: auto;
+  }
+
+  .upload-inner {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 28px;
+    width: 100%; max-width: 520px;
+    animation: uploadFadeIn 0.8s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  @keyframes uploadFadeIn {
+    from { opacity: 0; transform: translateY(32px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   .upload-logo {
     font-family: 'Syne', sans-serif;
-    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-size: clamp(3rem, 8vw, 6rem);
     font-weight: 800;
-    letter-spacing: -0.04em;
-    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    letter-spacing: -0.05em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent4) 60%, var(--accent3) 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: logoGlow 3s ease-in-out infinite alternate;
   }
 
-  .upload-sub {
-    color: var(--muted);
-    font-size: 0.85rem;
-    letter-spacing: 0.15em;
+  @keyframes logoGlow {
+    from { filter: drop-shadow(0 0 20px rgba(29,185,84,0.3)); }
+    to   { filter: drop-shadow(0 0 40px rgba(56,189,248,0.4)); }
+  }
+
+  .upload-tagline {
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
+    color: var(--muted);
+    margin-top: -16px;
   }
 
+  /* Drop zone */
   .drop-zone {
-    width: min(480px, 90vw);
-    border: 2px dashed rgba(29,185,84,0.4);
-    border-radius: 16px;
-    padding: 60px 40px;
+    width: 100%;
+    border: 1.5px dashed rgba(29,185,84,0.35);
+    border-radius: 20px;
+    padding: 52px 40px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: border-color 0.3s, background 0.3s, transform 0.3s;
     background: rgba(29,185,84,0.03);
     position: relative;
+    overflow: hidden;
   }
+
+  .drop-zone::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(29,185,84,0.06) 0%, transparent 70%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+
+  .drop-zone:hover::before, .drop-zone.drag-over::before { opacity: 1; }
 
   .drop-zone:hover, .drop-zone.drag-over {
     border-color: var(--accent);
-    background: rgba(29,185,84,0.08);
-    transform: scale(1.01);
+    background: rgba(29,185,84,0.05);
+    transform: translateY(-2px);
   }
 
   .drop-icon {
-    font-size: 3rem; margin-bottom: 16px;
-    animation: pulse 2s ease-in-out infinite;
+    margin-bottom: 18px;
+    display: flex; justify-content: center;
+    animation: floatIcon 3s ease-in-out infinite;
   }
 
-  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+  @keyframes floatIcon {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+  }
 
-  .drop-text { font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
-  .drop-sub { font-size: 0.75rem; color: var(--muted); }
+  .drop-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.05rem; font-weight: 700;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .drop-sub { font-size: 0.72rem; color: var(--muted); }
 
   #file-input { display: none; }
+
+  /* Export buttons */
+  .export-section {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .export-label {
+    font-size: 0.62rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.15em;
+    text-align: center;
+  }
+
+  .export-btns {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .export-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    padding: 13px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem; font-weight: 500;
+    cursor: pointer; text-decoration: none;
+    transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+
+  .export-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--btn-glow, rgba(29,185,84,0.08));
+    opacity: 0; transition: opacity 0.2s;
+  }
+
+  .export-btn:hover::before { opacity: 1; }
+  .export-btn:hover {
+    border-color: var(--btn-border, rgba(29,185,84,0.5));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--btn-shadow, rgba(29,185,84,0.15));
+  }
+
+  .export-btn:active { transform: translateY(0); }
+
+  .export-btn .btn-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: var(--btn-icon-bg, rgba(29,185,84,0.12));
+  }
+
+  .export-btn .btn-text { display: flex; flex-direction: column; gap: 1px; text-align: left; }
+  .export-btn .btn-name { color: var(--text); font-size: 0.78rem; font-weight: 600; }
+  .export-btn .btn-desc { color: var(--muted); font-size: 0.62rem; }
+
+  .export-note {
+    font-size: 0.63rem; color: var(--muted);
+    text-align: center; line-height: 1.6;
+  }
 
   .use-sample-btn {
     background: none; border: 1px solid var(--border);
@@ -120,6 +223,35 @@ License: MIT
     max-width: 1400px; margin: 0 auto;
     display: flex; align-items: flex-end; justify-content: space-between;
     gap: 24px; flex-wrap: wrap;
+    animation: heroIn 1s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  @keyframes heroIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* animated accent line below hero */
+  .hero-divider {
+    max-width: 1400px; margin: 0 auto 0;
+    padding: 0 40px;
+  }
+
+  .hero-divider-line {
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(29,185,84,0.6) 20%,
+      rgba(56,189,248,0.4) 50%,
+      rgba(168,85,247,0.3) 80%,
+      transparent 100%);
+    animation: lineGrow 1.2s cubic-bezier(0.16,1,0.3,1) 0.3s both;
+    transform-origin: left;
+  }
+
+  @keyframes lineGrow {
+    from { transform: scaleX(0); opacity: 0; }
+    to   { transform: scaleX(1); opacity: 1; }
   }
 
   .hero-title {
@@ -149,14 +281,22 @@ License: MIT
 
   .section-title {
     font-family: 'Syne', sans-serif;
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--muted);
     margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
     display: flex; align-items: center; gap: 10px;
+    position: relative;
+  }
+  .section-title::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0;
+    width: 40px; height: 1px;
+    background: var(--accent);
+    border-radius: 1px;
   }
   .section-title svg, .section-title i { vertical-align: middle; }
 
@@ -168,12 +308,19 @@ License: MIT
   }
 
   .stat-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(19,19,31,0.98) 0%, rgba(17,17,26,0.95) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     padding: 24px 20px;
     position: relative; overflow: hidden;
     animation: fadeUp 0.5s ease both;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  }
+
+  .stat-card:hover {
+    border-color: rgba(255,255,255,0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
   }
 
   .stat-card::before {
@@ -218,11 +365,18 @@ License: MIT
 
   /* ── PANEL ── */
   .panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(19,19,31,0.95) 0%, rgba(17,17,26,0.9) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 16px;
     padding: 28px;
     position: relative;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    backdrop-filter: blur(2px);
+  }
+
+  .panel:hover {
+    border-color: rgba(255,255,255,0.1);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
   .panel-title {
@@ -321,7 +475,7 @@ License: MIT
     font-size: 0.78rem;
   }
 
-  .track-item:hover { background: rgba(255,255,255,0.04); }
+  .track-item:hover { background: rgba(255,255,255,0.04); transform: translateX(3px); transition: background 0.15s, transform 0.2s; }
 
   .track-num { color: var(--muted); font-size: 0.7rem; text-align: right; }
 
@@ -378,7 +532,7 @@ License: MIT
   .section-divider { height: 40px; }
 
   /* ── SCROLL ANIMATIONS ── */
-  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
   .reveal.visible { opacity: 1; transform: none; }
 
   /* ── TOOLTIP ── */
@@ -410,9 +564,16 @@ License: MIT
   /* ── INSIGHT CARDS ── */
   .insights { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
   .insight-card {
-    background: var(--panel); border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(19,19,31,0.98) 0%, rgba(17,17,26,0.9) 100%);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px; padding: 20px;
     display: flex; gap: 16px; align-items: flex-start;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  }
+  .insight-card:hover {
+    border-color: rgba(29,185,84,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.2);
   }
   .insight-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid var(--border); }
   .insight-text .title { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
@@ -468,103 +629,12 @@ License: MIT
   @keyframes spin { to { transform: rotate(360deg); } }
 
 
-  /* ── SPOTIFY CONNECT ── */
-  .upload-screen-inner {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 28px;
-    width: 100%; max-width: 480px;
-  }
-
-  .connect-divider {
-    display: flex; align-items: center; gap: 14px;
-    width: 100%; color: var(--muted); font-size: 0.7rem;
-    letter-spacing: 0.1em; text-transform: uppercase;
-  }
-  .connect-divider::before, .connect-divider::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
-  }
-
-  .spotify-btn {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 100%; padding: 14px 24px;
-    background: #1db954; color: #000;
-    border: none; border-radius: 99px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem; font-weight: 700;
-    letter-spacing: 0.04em; cursor: pointer;
-    transition: all 0.2s; text-decoration: none;
-  }
-  .spotify-btn:hover { background: #1ed760; transform: scale(1.02); }
-  .spotify-btn:active { transform: scale(0.98); }
-
-  .spotify-btn svg { flex-shrink: 0; }
-
-  .spotify-setup-box {
-    width: 100%;
-    background: rgba(29,185,84,0.04);
-    border: 1px solid rgba(29,185,84,0.15);
-    border-radius: 14px;
-    padding: 20px;
-    display: none;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .spotify-setup-box.visible { display: flex; }
-
-  .setup-label {
-    font-size: 0.68rem; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.1em;
-    margin-bottom: 2px;
-  }
-  .setup-input {
-    width: 100%; background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 10px 14px; color: var(--text);
-    font-family: 'DM Mono', monospace; font-size: 0.8rem;
-    outline: none; transition: border-color 0.2s;
-  }
-  .setup-input:focus { border-color: var(--accent); }
-  .setup-input::placeholder { color: var(--muted); }
-
-  .setup-help {
-    font-size: 0.65rem; color: var(--muted); line-height: 1.6;
-  }
-  .setup-help a { color: var(--accent); text-decoration: none; }
-  .setup-help a:hover { text-decoration: underline; }
-
-  .spotify-status {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 0.75rem; color: var(--muted);
-    padding: 8px 0;
-  }
-  .status-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--muted); flex-shrink: 0;
-    transition: background 0.3s;
-  }
-  .status-dot.loading { background: #facc15; animation: blink 1s infinite; }
-  .status-dot.success { background: #1db954; }
-  .status-dot.error   { background: #f87171; }
-
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .progress-bar-wrap {
-    width: 100%; height: 4px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 2px; overflow: hidden;
-    display: none;
-  }
-  .progress-bar-wrap.visible { display: block; }
-  .progress-bar-fill {
-    height: 100%; background: var(--accent);
-    border-radius: 2px; width: 0%;
-    transition: width 0.3s ease;
-  }
 
   /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 
   /* ── ARCHETYPE ACTIONS ── */
   .archetype-actions {
@@ -720,27 +790,6 @@ License: MIT
     display: inline-flex;
   }
 
-  /* ── UPLOAD SCREEN LUCIDE ── */
-  .drop-icon {
-    display: flex; justify-content: center; align-items: center;
-    margin-bottom: 16px;
-  }
-
-  /* ── VELVET HERO LOGO UPDATE ── */
-  .upload-logo {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(2.5rem, 6vw, 5rem);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    background: linear-gradient(135deg, var(--accent), var(--accent4));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-
-  /* ── section title icon alignment ── */
-  .section-title { display: flex; align-items: center; gap: 8px; }
-  .section-title i[data-lucide] { flex-shrink: 0; }
-
-
   /* ── FEATURE EVOLUTION LINE CHART ── */
   .linechart-wrap { position: relative; }
   .linechart-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 16px; }
@@ -751,13 +800,14 @@ License: MIT
 
   /* ── MUSIC PROFILE CARD ── */
   .profile-card {
-    background: linear-gradient(135deg, #0d1a12 0%, #0f0f1f 50%, #1a0d1f 100%);
+    background: linear-gradient(135deg, rgba(13,26,18,0.97) 0%, rgba(15,15,31,0.95) 50%, rgba(26,13,31,0.97) 100%);
     border: 1px solid rgba(29,185,84,0.2);
     border-radius: 20px;
     padding: 40px;
     position: relative;
     overflow: hidden;
     margin-bottom: 32px;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
   .profile-card::before {
@@ -884,11 +934,16 @@ License: MIT
   }
 
   .era-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 10px;
     padding: 16px;
     position: relative; overflow: hidden;
+    transition: border-color 0.3s, transform 0.25s, box-shadow 0.25s;
+  }
+  .era-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.25);
   }
 
   .era-card::before {
@@ -938,54 +993,51 @@ License: MIT
 <body>
 
 <!-- Upload Screen -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Upload Screen -->
 <div id="upload-screen">
-  <div class="upload-screen-inner">
+  <div class="upload-inner">
+
     <div class="upload-logo">VELVET</div>
-    <div class="upload-sub">Know Your Sound</div>
+    <div class="upload-tagline">Know Your Sound</div>
 
-    <!-- Spotify Direct Connect -->
-    <button class="spotify-btn" id="spotify-connect-btn" onclick="startSpotifyAuth()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-      Sign in with Spotify
-    </button>
-
-    <!-- One-time setup note -->
-    <div id="spotify-setup-note" style="width:100%;background:rgba(29,185,84,0.04);border:1px solid rgba(29,185,84,0.15);border-radius:12px;padding:16px;display:none;flex-direction:column;gap:10px;">
-      <div style="font-size:0.72rem;color:#f0efe8;font-weight:600;">One-time setup (2 min)</div>
-      <div style="font-size:0.65rem;color:#6b6b7a;line-height:1.7;">
-        1. Go to <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:#1db954;">developer.spotify.com/dashboard</a> → Create app<br>
-        2. Add Redirect URI: <code id="redirect-uri-show" style="color:#38bdf8;font-size:0.62rem;word-break:break-all;">loading…</code><br>
-        3. Copy your Client ID and paste below
-      </div>
-      <input class="setup-input" id="spotify-client-id" type="text" placeholder="Paste Client ID…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:9px 12px;color:#f0efe8;font-family:inherit;font-size:0.78rem;outline:none;" />
-      <button class="spotify-btn" onclick="saveClientIdAndAuth()" style="margin-top:2px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-        Connect &amp; Import
-      </button>
-    </div>
-
-    <!-- Status / progress (shown during import) -->
-    <div class="spotify-status" id="spotify-status" style="display:none">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text">Connecting…</span>
-    </div>
-    <div class="progress-bar-wrap" id="progress-wrap">
-      <div class="progress-bar-fill" id="progress-fill"></div>
-    </div>
-
-    <div class="connect-divider">or import CSV</div>
-
-    <!-- CSV Upload -->
-    <div class="drop-zone" id="drop-zone" style="width:100%">
-      <div class="drop-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/> <circle cx="6" cy="18" r="3"/> <circle cx="18" cy="16" r="3"/></svg></div>
+    <!-- Drop zone -->
+    <div class="drop-zone" id="drop-zone">
+      <div class="drop-icon"><svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
       <div class="drop-text">Drop your Liked_Songs.csv here</div>
-      <div class="drop-sub" style="margin-top:6px">or click to browse</div>
+      <div class="drop-sub" style="margin-top:6px">or click to browse files</div>
       <input type="file" id="file-input" accept=".csv">
     </div>
-    <div style="color:var(--muted); font-size:0.65rem; text-align:center; line-height:1.6">
-      Export CSV from <a href="https://exportify.net" target="_blank" style="color:var(--accent)">Exportify</a> or
-      <a href="https://watsonbox.github.io/exportify/" target="_blank" style="color:var(--accent)">Watsonbox</a>
+
+    <!-- Export site buttons -->
+    <div class="export-section">
+      <div class="export-label">Step 1 — Export your CSV from Spotify</div>
+      <div class="export-btns">
+        <a href="https://exportify.net" target="_blank" class="export-btn"
+           style="--btn-glow:rgba(29,185,84,0.08);--btn-border:rgba(29,185,84,0.45);--btn-shadow:rgba(29,185,84,0.12);--btn-icon-bg:rgba(29,185,84,0.12);">
+          <div class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+          <div class="btn-text">
+            <span class="btn-name">Exportify</span>
+            <span class="btn-desc">exportify.net</span>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <a href="https://watsonbox.github.io/exportify/" target="_blank" class="export-btn"
+           style="--btn-glow:rgba(168,85,247,0.08);--btn-border:rgba(168,85,247,0.45);--btn-shadow:rgba(168,85,247,0.12);--btn-icon-bg:rgba(168,85,247,0.12);">
+          <div class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+          <div class="btn-text">
+            <span class="btn-name">Watsonbox</span>
+            <span class="btn-desc">github.io/exportify</span>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+      <div class="export-note">
+        Export your Liked Songs — make sure to include audio features (Danceability, Energy, Valence…)
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -1007,6 +1059,9 @@ License: MIT
   </div>
 
   <div class="container">
+
+    <!-- Hero divider -->
+    <div class="hero-divider"><div class="hero-divider-line"></div></div>
 
     <!-- TOP STATS -->
     <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="7" height="9" x="3" y="3" rx="1"/> <rect width="7" height="5" x="14" y="3" rx="1"/> <rect width="7" height="9" x="14" y="12" rx="1"/> <rect width="7" height="5" x="3" y="16" rx="1"/></svg> Overview</div>
@@ -1354,6 +1409,145 @@ License: MIT
       </div>
     </div>
 
+
+    <!-- ═══ LISTENING HABITS ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Listening Habits</div>
+    <div class="grid-3">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Day-of-Week Saves</div>
+        <canvas id="dow-canvas" width="400" height="200" style="width:100%"></canvas>
+        <div class="hist-labels" id="dow-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Month-of-Year Saves</div>
+        <canvas id="moy-canvas" width="400" height="200" style="width:100%"></canvas>
+        <div class="hist-labels" id="moy-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span> Saving Streaks</div>
+        <div id="streak-stats" style="display:flex;flex-direction:column;gap:14px;padding-top:4px"></div>
+      </div>
+    </div>
+
+    <!-- ═══ DIVERSITY & VARIETY ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="16 3 21 3 21 8"/><line x1="4" x2="21" y1="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" x2="21" y1="15" y2="21"/><line x1="4" x2="9" y1="3" y2="9"/></svg> Library Diversity</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span> Artist Concentration</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:12px">How spread out are your listens across artists?</div>
+        <canvas id="concentration-canvas" width="500" height="160" style="width:100%"></canvas>
+        <div id="concentration-stats" style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-size:0.72rem;"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span> Songs per Artist Distribution</div>
+        <canvas id="songs-per-artist-canvas" width="500" height="160" style="width:100%"></canvas>
+        <div class="hist-labels" id="spa-labels"></div>
+        <div id="spa-stats" style="margin-top:12px;font-size:0.72rem;color:var(--muted)"></div>
+      </div>
+    </div>
+
+    <!-- ═══ DEEP AUDIO ANALYSIS ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-1.04-4.77A2.5 2.5 0 0 1 5 11.5a2.5 2.5 0 0 1 1.5-2.3 2.5 2.5 0 0 1 2-4.69Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 1.04-4.77A2.5 2.5 0 0 0 19 11.5a2.5 2.5 0 0 0-1.5-2.3 2.5 2.5 0 0 0-2-4.69Z"/></svg> Deep Audio Analysis</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg></span> Feature Variance (How Diverse Your Sound Is)</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">High variance = eclectic taste, Low = consistent sound</div>
+        <div id="variance-bars" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span> Audio Feature Heatmap</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Energy vs Danceability across your library</div>
+        <canvas id="heatmap-canvas" width="440" height="220" style="width:100%;cursor:crosshair"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--muted);margin-top:4px"><span>Low Dance</span><span>High Dance</span></div>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg></span> Time Signature Breakdown</div>
+        <canvas id="timesig-canvas" width="300" height="200" style="max-width:200px;display:block;margin:0 auto"></canvas>
+        <div class="donut-legend" id="timesig-legend"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Popularity Tiers</div>
+        <div id="pop-tiers" style="display:flex;flex-direction:column;gap:8px;margin-top:4px"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span> BPM Sweet Spots</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Your top tempo ranges</div>
+        <div id="bpm-zones" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- ═══ ARTIST DEEP DIVE ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Artist Deep Dive</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg></span> Top 10 Artist Profiles</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:16px">Audio fingerprint of your most-saved artists</div>
+      <div id="artist-profiles" style="display:flex;flex-direction:column;gap:0"></div>
+    </div>
+
+    <!-- ═══ MOOD INTELLIGENCE ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg> Mood Intelligence</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span> Mood Quadrant Breakdown</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Energy × Valence → your emotional listening zones</div>
+        <div id="mood-quadrants" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> Energy Tier Breakdown</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">How your library splits across energy levels</div>
+        <div id="energy-tiers" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div style="margin-top:20px">
+          <div class="panel-title" style="font-size:0.88rem;"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg></span> Valence Tiers</div>
+          <div id="valence-tiers" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RELEASE PATTERNS ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" x2="8" y1="2" y2="18"/><line x1="16" x2="16" y1="6" y2="22"/></svg> Release Patterns</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg></span> Songs by Release Month (across all years)</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Which month produces the most music you like?</div>
+        <canvas id="release-month-canvas" width="500" height="160" style="width:100%"></canvas>
+        <div class="hist-labels" id="release-month-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Newness vs Nostalgia</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Gap between release date and when you saved it</div>
+        <div id="newness-stats" style="display:flex;flex-direction:column;gap:12px"></div>
+        <canvas id="newness-canvas" width="500" height="120" style="width:100%;margin-top:14px"></canvas>
+        <div class="hist-labels" id="newness-labels"></div>
+      </div>
+    </div>
+
+    <!-- ═══ COLLECTION ANALYTICS ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> Collection Analytics</div>
+    <div class="grid-3">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Save Rate Over Time</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Songs saved per week, rolling</div>
+        <canvas id="save-rate-canvas" width="400" height="140" style="width:100%"></canvas>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg></span> Cumulative Library Growth</div>
+        <canvas id="cumulative-canvas" width="400" height="140" style="width:100%"></canvas>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg></span> Library Stats at a Glance</div>
+        <div id="library-glance" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+      </div>
+    </div>
+
   </div><!-- /container -->
 </div><!-- /app -->
 
@@ -1363,242 +1557,6 @@ License: MIT
 // ── DATA STORE ──
 let songs = [];
 
-// ═══════════════════════════════════════════════
-// SPOTIFY OAUTH — same-page PKCE redirect flow
-// Redirect URI = this page's own URL (index.html)
-// No callback.html needed.
-// ═══════════════════════════════════════════════
-
-const SPOTIFY_CLIENT_ID = 'YOUR_CLIENT_ID_HERE';
-const SPOTIFY_SCOPES    = 'user-library-read';
-
-// The redirect URI is always this page itself — auto-detected at runtime
-function getRedirectUri() {
-  return window.location.origin + window.location.pathname;
-}
-
-// ── PKCE helpers ──
-async function generateCodeChallenge(verifier) {
-  const enc  = new TextEncoder().encode(verifier);
-  const hash = await crypto.subtle.digest('SHA-256', enc);
-  return btoa(String.fromCharCode(...new Uint8Array(hash)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-function randomString(len) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const arr = new Uint8Array(len);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, v => chars[v % chars.length]).join('');
-}
-
-// ── Save Client ID entered by user ──
-function saveClientIdAndAuth() {
-  const id = document.getElementById('spotify-client-id').value.trim();
-  if (!id) return;
-  localStorage.setItem('velvet_client_id', id);
-  document.getElementById('spotify-setup-note').style.display = 'none';
-  startSpotifyAuth(id);
-}
-
-// ── Start auth — redirect to Spotify, come back to same page ──
-async function startSpotifyAuth(clientIdOverride) {
-  const clientId = clientIdOverride
-    || localStorage.getItem('velvet_client_id')
-    || SPOTIFY_CLIENT_ID;
-
-  if (clientId === 'YOUR_CLIENT_ID_HERE') {
-    // No Client ID yet — show setup panel
-    const note = document.getElementById('spotify-setup-note');
-    const uriEl = document.getElementById('redirect-uri-show');
-    note.style.display = 'flex';
-    if (uriEl) uriEl.textContent = getRedirectUri();
-    return;
-  }
-
-  const verifier  = randomString(64);
-  const challenge = await generateCodeChallenge(verifier);
-  const state     = randomString(16);
-
-  // Persist PKCE state across the page redirect
-  sessionStorage.setItem('pkce_verifier',   verifier);
-  sessionStorage.setItem('pkce_state',      state);
-  sessionStorage.setItem('pkce_client_id',  clientId);
-
-  const authUrl = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
-    response_type:         'code',
-    client_id:             clientId,
-    scope:                 SPOTIFY_SCOPES,
-    redirect_uri:          getRedirectUri(),
-    code_challenge_method: 'S256',
-    code_challenge:        challenge,
-    state:                 state,
-  });
-
-  // Full-page redirect to Spotify — returns to this same URL
-  window.location.href = authUrl;
-}
-
-// ── Called on page load — handles the ?code= Spotify sends back ──
-async function handleSpotifyCallback() {
-  const params = new URLSearchParams(window.location.search);
-  const code   = params.get('code');
-  const state  = params.get('state');
-  const error  = params.get('error');
-
-  if (!code && !error) return; // normal page load, nothing to do
-
-  // Strip the ?code=... from the URL immediately so refresh doesn't re-trigger
-  window.history.replaceState({}, '', window.location.pathname);
-
-  if (error) {
-    document.getElementById('upload-screen').style.display = 'flex';
-    showStatus('error', 'Spotify denied access: ' + error);
-    return;
-  }
-
-  const savedState = sessionStorage.getItem('pkce_state');
-  const verifier   = sessionStorage.getItem('pkce_verifier');
-  const clientId   = sessionStorage.getItem('pkce_client_id')
-                     || localStorage.getItem('velvet_client_id')
-                     || SPOTIFY_CLIENT_ID;
-
-  // Show the upload screen while we finish the flow
-  document.getElementById('upload-screen').style.display = 'flex';
-  showStatus('loading', 'Completing sign-in…');
-
-  if (savedState && state !== savedState) {
-    showStatus('error', 'State mismatch — please try again.');
-    return;
-  }
-
-  if (!verifier) {
-    showStatus('error', 'Session expired — please try again.');
-    return;
-  }
-
-  // Exchange code → access token
-  try {
-    const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type:    'authorization_code',
-        code,
-        redirect_uri:  getRedirectUri(),
-        client_id:     clientId,
-        code_verifier: verifier,
-      }),
-    });
-
-    if (!tokenRes.ok) {
-      const err = await tokenRes.json().catch(() => ({}));
-      throw new Error(err.error_description || ('HTTP ' + tokenRes.status));
-    }
-
-    const { access_token } = await tokenRes.json();
-    sessionStorage.removeItem('pkce_verifier');
-    sessionStorage.removeItem('pkce_state');
-
-    await fetchSpotifyLibrary(access_token);
-
-  } catch (e) {
-    showStatus('error', 'Sign-in failed: ' + e.message);
-  }
-}
-
-
-async function fetchSpotifyLibrary(token) {
-  showStatus('loading', 'Fetching your liked songs…');
-  showProgress(0);
-
-  const allTracks = [];
-  let url = 'https://api.spotify.com/v1/me/tracks?limit=50&offset=0';
-
-  // Step 1: fetch all saved tracks (paginated)
-  while (url) {
-    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
-    if (!res.ok) throw new Error('API error: ' + res.status);
-    const data = await res.json();
-    allTracks.push(...data.items);
-    url = data.next;
-    const pct = Math.min(50, (allTracks.length / (data.total || 1)) * 50);
-    showStatus('loading', 'Fetching tracks… ' + allTracks.length + ' / ' + data.total);
-    showProgress(pct);
-  }
-
-  showStatus('loading', 'Fetching audio features…');
-
-  // Step 2: fetch audio features in batches of 100
-  const features = {};
-  const ids = allTracks.map(i => i.track.id).filter(Boolean);
-  for (let i = 0; i < ids.length; i += 100) {
-    const batch = ids.slice(i, i + 100);
-    const res = await fetch(
-      'https://api.spotify.com/v1/audio-features?ids=' + batch.join(','),
-      { headers: { Authorization: 'Bearer ' + token } }
-    );
-    if (!res.ok) throw new Error('Audio features error: ' + res.status);
-    const data = await res.json();
-    (data.audio_features || []).forEach(f => { if (f) features[f.id] = f; });
-    const pct = 50 + ((i + batch.length) / ids.length) * 50;
-    showProgress(pct);
-  }
-
-  // Step 3: Build songs array matching CSV format
-  songs = allTracks.map(item => {
-    const t = item.track;
-    const f = features[t.id] || {};
-    return {
-      'Track URI':        'spotify:track:' + t.id,
-      'Track Name':       t.name,
-      'Album Name':       t.album.name,
-      'Artist Name(s)':   t.artists.map(a => a.name).join(';'),
-      'Release Date':     t.album.release_date || '',
-      'Duration (ms)':    String(t.duration_ms),
-      'Popularity':       String(t.popularity),
-      'Explicit':         String(t.explicit),
-      'Added At':         item.added_at,
-      'Genres':           '',
-      'Record Label':     '',
-      'Danceability':     String(f.danceability ?? ''),
-      'Energy':           String(f.energy ?? ''),
-      'Key':              String(f.key ?? ''),
-      'Loudness':         String(f.loudness ?? ''),
-      'Mode':             String(f.mode ?? ''),
-      'Speechiness':      String(f.speechiness ?? ''),
-      'Acousticness':     String(f.acousticness ?? ''),
-      'Instrumentalness': String(f.instrumentalness ?? ''),
-      'Liveness':         String(f.liveness ?? ''),
-      'Valence':          String(f.valence ?? ''),
-      'Tempo':            String(f.tempo ?? ''),
-      'Time Signature':   String(f.time_signature ?? ''),
-    };
-  });
-
-  showStatus('success', songs.length + ' songs imported! Loading…');
-  showProgress(100);
-
-  setTimeout(() => {
-    launch();
-  }, 600);
-}
-
-function showStatus(type, msg) {
-  const el   = document.getElementById('spotify-status');
-  const dot  = document.getElementById('status-dot');
-  const text = document.getElementById('status-text');
-  if (!el) return;
-  el.style.display = 'flex';
-  dot.className = 'status-dot ' + type;
-  text.textContent = msg;
-  const wrap = document.getElementById('progress-wrap');
-  if (wrap) wrap.classList.add('visible');
-}
-
-function showProgress(pct) {
-  const fill = document.getElementById('progress-fill');
-  if (fill) fill.style.width = pct + '%';
-}
 
 
 
@@ -1642,17 +1600,11 @@ function processFile(file) {
   });
 }
 
-// Check for Spotify OAuth callback on page load
-document.addEventListener('DOMContentLoaded', () => {
-  handleSpotifyCallback();
-});
-
 function launch() {
   document.getElementById('upload-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   buildAll();
   initScrollReveal();
-
 }
 
 // ── HELPERS ──
@@ -1806,6 +1758,15 @@ function buildAll() {
   buildProfile(songs, nums, genreEntries);
   buildEras(songs);
   buildEvolution(songs);
+
+  // EXTENDED STATS
+  buildListeningHabits(songs);
+  buildDiversity(songs, nums);
+  buildDeepAudio(songs, nums);
+  buildArtistProfiles(songs, nums);
+  buildMoodIntelligence(songs, nums);
+  buildReleasePatterns(songs, nums);
+  buildCollectionAnalytics(songs, nums);
 }
 
 // ── INSIGHTS ──
@@ -3078,6 +3039,629 @@ function closeArchetypeExplorer(e) {
   document.body.style.overflow = '';
 }
 
+
+// ═══════════════════════════════════════════════
+// NEW STATISTICS FUNCTIONS
+// ═══════════════════════════════════════════════
+
+// ── LISTENING HABITS ──
+function buildListeningHabits(songs) {
+  // Day-of-week
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dowCounts = Array(7).fill(0);
+  const moyCounts = Array(12).fill(0);
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  let streakMax = 0, streakCur = 0, lastDate = null, totalDays = new Set();
+  const sortedDates = songs.map(s => s['Added At']).filter(Boolean).sort();
+
+  sortedDates.forEach(dt => {
+    const d = new Date(dt);
+    dowCounts[d.getUTCDay()]++;
+    moyCounts[d.getUTCMonth()]++;
+    const dayKey = dt.slice(0,10);
+    totalDays.add(dayKey);
+    if (lastDate) {
+      const diff = (new Date(dayKey) - new Date(lastDate)) / 86400000;
+      if (diff === 1) { streakCur++; streakMax = Math.max(streakMax, streakCur); }
+      else if (diff > 1) streakCur = 1;
+    } else { streakCur = 1; }
+    lastDate = dayKey;
+  });
+
+  // Draw day-of-week bar chart
+  const dowCanvas = document.getElementById('dow-canvas');
+  if (dowCanvas) {
+    const ctx = dowCanvas.getContext('2d');
+    const W = dowCanvas.width, H = dowCanvas.height - 20;
+    const maxV = Math.max(...dowCounts);
+    const bw = W / 7;
+    ctx.clearRect(0, 0, W, dowCanvas.height);
+    dowCounts.forEach((v, i) => {
+      const bh = (v / maxV) * H;
+      const x = i * bw;
+      const grad = ctx.createLinearGradient(0, H - bh, 0, H);
+      grad.addColorStop(0, '#38bdf8');
+      grad.addColorStop(1, '#1db954');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.roundRect(x+3, H-bh, bw-6, bh, [3,3,0,0]); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '10px DM Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(DAYS[i], x + bw/2, H + 14);
+      if (v === maxV) {
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 10px DM Mono, monospace';
+        ctx.fillText(v, x + bw/2, H - bh - 4);
+      }
+    });
+  }
+
+  // Draw month-of-year
+  const moyCanvas = document.getElementById('moy-canvas');
+  if (moyCanvas) {
+    const ctx = moyCanvas.getContext('2d');
+    const W = moyCanvas.width, H = moyCanvas.height - 20;
+    const maxV = Math.max(...moyCounts);
+    const bw = W / 12;
+    ctx.clearRect(0, 0, W, moyCanvas.height);
+    moyCounts.forEach((v, i) => {
+      const bh = (v / maxV) * H;
+      const x = i * bw;
+      const hue = (i / 12) * 120 + 140;
+      ctx.fillStyle = `hsl(${hue},60%,55%)`;
+      ctx.beginPath(); ctx.roundRect(x+2, H-bh, bw-4, bh, [3,3,0,0]); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.font = '9px DM Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(MONTHS[i], x + bw/2, H + 14);
+    });
+  }
+
+  // Streak stats
+  const favDay = DAYS[dowCounts.indexOf(Math.max(...dowCounts))];
+  const favMonth = MONTHS[moyCounts.indexOf(Math.max(...moyCounts))];
+  const streakEl = document.getElementById('streak-stats');
+  if (streakEl) {
+    const items = [
+      { label: 'Longest save streak', value: streakMax + ' days', color: '#facc15' },
+      { label: 'Total days with saves', value: totalDays.size + ' days', color: '#1db954' },
+      { label: 'Favourite day to save', value: favDay, color: '#38bdf8' },
+      { label: 'Favourite month', value: favMonth, color: '#a855f7' },
+      { label: 'Avg saves per active day', value: (songs.length / Math.max(1, totalDays.size)).toFixed(1), color: '#ff6b35' },
+      { label: 'Active days / total span', value: (() => {
+        if (sortedDates.length < 2) return 'N/A';
+        const span = (new Date(sortedDates[sortedDates.length-1]) - new Date(sortedDates[0])) / 86400000;
+        return ((totalDays.size / Math.max(1, span)) * 100).toFixed(0) + '%';
+      })(), color: '#f472b6' },
+    ];
+    items.forEach(item => {
+      streakEl.innerHTML += `<div style="display:flex;justify-content:space-between;font-size:0.72rem;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">${item.label}</span>
+        <span style="color:${item.color};font-family:'Syne',sans-serif;font-weight:700">${item.value}</span>
+      </div>`;
+    });
+  }
+}
+
+// ── DIVERSITY & VARIETY ──
+function buildDiversity(songs, nums) {
+  const artistCounts = {};
+  songs.forEach(s => {
+    const a = s['Artist Name(s)'].split(';')[0].trim();
+    artistCounts[a] = (artistCounts[a] || 0) + 1;
+  });
+  const counts = Object.values(artistCounts).sort((a,b) => b-a);
+  const total = counts.reduce((a,b)=>a+b,0);
+  const uniqueArtists = counts.length;
+
+  // Concentration canvas (cumulative share curve)
+  const concCanvas = document.getElementById('concentration-canvas');
+  if (concCanvas) {
+    const ctx = concCanvas.getContext('2d');
+    const W = concCanvas.width, H = concCanvas.height;
+    ctx.clearRect(0, 0, W, H);
+    // Lorenz curve
+    let cumul = 0;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    counts.forEach((c, i) => {
+      cumul += c;
+      const x = ((i+1) / counts.length) * W;
+      const y = H - (cumul / total) * H;
+      ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = '#1db954';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Perfect equality line
+    ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(W, 0);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+    // Labels
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '9px DM Mono';
+    ctx.textAlign = 'left'; ctx.fillText('Equal distribution', 4, 12);
+    ctx.fillStyle = '#1db954'; ctx.fillText('Your library', 4, 26);
+  }
+
+  // Gini coefficient
+  let gini = 0;
+  counts.forEach((a, i) => counts.forEach((b, j) => { gini += Math.abs(a - b); }));
+  gini /= (2 * counts.length * counts.length * (total / counts.length));
+
+  const top1pct = Math.ceil(counts.length * 0.01);
+  const top10pct = Math.ceil(counts.length * 0.1);
+  const top1share = (counts.slice(0, top1pct).reduce((a,b)=>a+b,0) / total * 100).toFixed(0);
+  const top10share = (counts.slice(0, top10pct).reduce((a,b)=>a+b,0) / total * 100).toFixed(0);
+
+  const cStats = document.getElementById('concentration-stats');
+  if (cStats) {
+    [
+      { label: 'Unique artists', value: uniqueArtists, color: '#1db954' },
+      { label: 'Gini coefficient', value: gini.toFixed(2), color: '#facc15' },
+      { label: `Top ${top1pct} artist(s) = `, value: top1share + '% of library', color: '#ff6b35' },
+      { label: `Top ${top10pct} artists = `, value: top10share + '% of library', color: '#a855f7' },
+    ].forEach(s => {
+      cStats.innerHTML += `<div><span style="color:var(--muted)">${s.label}</span> <span style="color:${s.color};font-weight:700">${s.value}</span></div>`;
+    });
+  }
+
+  // Songs-per-artist histogram
+  const maxPerArtist = Math.max(...counts);
+  const bins = Math.min(maxPerArtist, 15);
+  const bw = maxPerArtist / bins;
+  const hBins = Array(bins).fill(0);
+  counts.forEach(c => { const idx = Math.min(bins-1, Math.floor((c-1)/bw)); hBins[idx]++; });
+
+  const spaCanvas = document.getElementById('songs-per-artist-canvas');
+  if (spaCanvas) {
+    const ctx = spaCanvas.getContext('2d');
+    const W = spaCanvas.width, H = spaCanvas.height;
+    const maxH = Math.max(...hBins);
+    const barW = W / bins;
+    ctx.clearRect(0, 0, W, H);
+    hBins.forEach((v, i) => {
+      const bh = (v / maxH) * (H - 16);
+      ctx.fillStyle = '#a855f7cc';
+      ctx.beginPath(); ctx.roundRect(i*barW+2, H-16-bh, barW-4, bh, [3,3,0,0]); ctx.fill();
+    });
+  }
+
+  const spaStats = document.getElementById('spa-stats');
+  if (spaStats) {
+    const solo = counts.filter(c=>c===1).length;
+    spaStats.innerHTML = `${solo} artists (${((solo/uniqueArtists)*100).toFixed(0)}%) appear only once · max: ${maxPerArtist} songs from one artist`;
+  }
+  const spaLabels = document.getElementById('spa-labels');
+  if (spaLabels) {
+    spaLabels.innerHTML = '';
+    for (let i=0; i<=4; i++) {
+      const sp = document.createElement('span');
+      sp.textContent = Math.round(1 + (maxPerArtist-1)*i/4);
+      spaLabels.appendChild(sp);
+    }
+  }
+}
+
+// ── DEEP AUDIO ANALYSIS ──
+function buildDeepAudio(songs, nums) {
+  // Variance bars
+  const features = [
+    { name: 'Energy',       vals: nums.energy,  color: '#f87171' },
+    { name: 'Valence',      vals: nums.valence, color: '#facc15' },
+    { name: 'Danceability', vals: nums.dance,   color: '#ff6b35' },
+    { name: 'Acousticness', vals: nums.acoustic, color: '#2dd4bf' },
+    { name: 'Tempo (norm)', vals: nums.tempo.map(v=>Math.min(1,(v-60)/150)), color: '#a855f7' },
+    { name: 'Loudness (n)', vals: nums.loudness.map(v=>Math.min(1,Math.max(0,(v+25)/25))), color: '#38bdf8' },
+  ];
+  const varContainer = document.getElementById('variance-bars');
+  if (varContainer) {
+    features.forEach(f => {
+      const m = avg(f.vals);
+      const variance = Math.sqrt(f.vals.reduce((s,v)=>s+(v-m)**2,0)/f.vals.length);
+      const pct = (variance * 100).toFixed(0);
+      const label = variance > 0.25 ? 'Eclectic' : variance > 0.15 ? 'Varied' : 'Consistent';
+      varContainer.innerHTML += `
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem">
+            <span style="color:var(--muted)">${f.name}</span>
+            <span style="color:${f.color}">${label} (σ=${variance.toFixed(3)})</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+            <div style="width:${Math.min(100, variance*300)}%;height:100%;background:${f.color};border-radius:4px;transition:width 1s ease"></div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Energy-Danceability heatmap
+  const hmCanvas = document.getElementById('heatmap-canvas');
+  if (hmCanvas) {
+    const ctx = hmCanvas.getContext('2d');
+    const W = hmCanvas.width, H = hmCanvas.height;
+    const BINS = 12;
+    const grid = Array.from({length:BINS}, ()=>Array(BINS).fill(0));
+    songs.forEach(s => {
+      const e = parseFloat(s['Energy']), d = parseFloat(s['Danceability']);
+      if (isNaN(e)||isNaN(d)) return;
+      const xi = Math.min(BINS-1, Math.floor(d * BINS));
+      const yi = Math.min(BINS-1, Math.floor((1-e) * BINS));
+      grid[yi][xi]++;
+    });
+    const maxCell = Math.max(...grid.flat());
+    const cw = W/BINS, ch = H/BINS;
+    ctx.clearRect(0,0,W,H);
+    grid.forEach((row, yi) => row.forEach((v, xi) => {
+      const intensity = maxCell > 0 ? v/maxCell : 0;
+      if (intensity === 0) return;
+      ctx.fillStyle = `rgba(29,185,84,${intensity * 0.85})`;
+      ctx.fillRect(xi*cw+1, yi*ch+1, cw-2, ch-2);
+      if (intensity > 0.5) {
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.font = '9px DM Mono'; ctx.textAlign = 'center';
+        ctx.fillText(v, xi*cw+cw/2, yi*ch+ch/2+4);
+      }
+    }));
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+    for (let i=0;i<=BINS;i++) {
+      ctx.beginPath(); ctx.moveTo(i*cw,0); ctx.lineTo(i*cw,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i*ch); ctx.lineTo(W,i*ch); ctx.stroke();
+    }
+    ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.font='9px DM Mono'; ctx.textAlign='center';
+    ctx.fillText('Low Energy', 30, H-4); ctx.fillText('High Energy', 30, 10);
+  }
+
+  // Time signature donut
+  const tsCounts = {};
+  songs.forEach(s => {
+    const ts = s['Time Signature'] || '4';
+    const label = ts + '/4';
+    tsCounts[label] = (tsCounts[label]||0)+1;
+  });
+  const tsData = Object.entries(tsCounts).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>[k,v,['#1db954','#38bdf8','#a855f7','#ff6b35','#facc15'][i%5]]);
+  drawDonut('timesig-canvas', tsData, 'timesig-legend');
+
+  // Popularity tiers
+  const popTiers = [
+    { label: '🌐 Mainstream', range:[80,100], color:'#1db954' },
+    { label: '📻 Popular',    range:[60,80],  color:'#38bdf8' },
+    { label: '🎵 Mid-tier',   range:[40,60],  color:'#facc15' },
+    { label: '🔍 Niche',      range:[20,40],  color:'#ff6b35' },
+    { label: '🌱 Underground',range:[0,20],   color:'#a855f7' },
+  ];
+  const ptEl = document.getElementById('pop-tiers');
+  if (ptEl) {
+    const total = nums.pop.length;
+    popTiers.forEach(tier => {
+      const n = nums.pop.filter(v=>v>=tier.range[0]&&v<tier.range[1]).length;
+      const pct = total>0 ? (n/total*100).toFixed(0) : 0;
+      ptEl.innerHTML += `
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem">
+            <span>${tier.label}</span>
+            <span style="color:${tier.color}">${n} tracks (${pct}%)</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:5px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${tier.color};border-radius:4px"></div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // BPM zones
+  const bpmZones = [
+    { label: 'Slow (<80)',     range:[0,80],   color:'#a855f7' },
+    { label: 'Relaxed (80-100)',range:[80,100], color:'#38bdf8' },
+    { label: 'Moderate (100-120)',range:[100,120],color:'#1db954'},
+    { label: 'Upbeat (120-140)',range:[120,140],color:'#facc15' },
+    { label: 'Fast (140-160)', range:[140,160], color:'#ff6b35' },
+    { label: 'Very Fast (160+)',range:[160,300], color:'#f87171' },
+  ];
+  const bpmEl = document.getElementById('bpm-zones');
+  if (bpmEl) {
+    const total = nums.tempo.length;
+    bpmZones.forEach(z => {
+      const n = nums.tempo.filter(v=>v>=z.range[0]&&v<z.range[1]).length;
+      const pct = total>0?(n/total*100).toFixed(0):0;
+      bpmEl.innerHTML += `
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem">
+            <span style="color:var(--muted)">${z.label}</span>
+            <span style="color:${z.color}">${n} (${pct}%)</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border-radius:3px;height:4px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${z.color};border-radius:3px"></div>
+          </div>
+        </div>`;
+    });
+  }
+}
+
+// ── ARTIST PROFILES ──
+function buildArtistProfiles(songs, nums) {
+  const artistSongs = {};
+  songs.forEach(s => {
+    const a = s['Artist Name(s)'].split(';')[0].trim();
+    if (!artistSongs[a]) artistSongs[a] = [];
+    artistSongs[a].push(s);
+  });
+  const top10 = Object.entries(artistSongs).sort((a,b)=>b[1].length-a[1].length).slice(0,10);
+  const container = document.getElementById('artist-profiles');
+  if (!container) return;
+
+  top10.forEach(([artist, tracks], idx) => {
+    const energy = avg(tracks.map(s=>parseFloat(s['Energy'])).filter(v=>!isNaN(v)));
+    const valence = avg(tracks.map(s=>parseFloat(s['Valence'])).filter(v=>!isNaN(v)));
+    const dance = avg(tracks.map(s=>parseFloat(s['Danceability'])).filter(v=>!isNaN(v)));
+    const acoustic = avg(tracks.map(s=>parseFloat(s['Acousticness'])).filter(v=>!isNaN(v)));
+    const pop = avg(tracks.map(s=>parseFloat(s['Popularity'])).filter(v=>!isNaN(v)));
+    const bars = [
+      {label:'Energy',    val:energy,   color:'#f87171'},
+      {label:'Vibe',      val:valence,  color:'#facc15'},
+      {label:'Dance',     val:dance,    color:'#ff6b35'},
+      {label:'Acoustic',  val:acoustic, color:'#2dd4bf'},
+    ];
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:120px 1fr auto;gap:16px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)';
+    row.innerHTML = `
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text);margin-bottom:2px">${artist}</div>
+        <div style="font-size:0.62rem;color:var(--muted)">${tracks.length} songs</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        ${bars.map(b=>`
+          <div style="display:grid;grid-template-columns:52px 1fr 32px;gap:6px;align-items:center;font-size:0.62rem">
+            <span style="color:var(--muted)">${b.label}</span>
+            <div style="background:rgba(255,255,255,0.05);border-radius:3px;height:4px;overflow:hidden">
+              <div style="width:${isNaN(b.val)?0:(b.val*100).toFixed(0)}%;height:100%;background:${b.color};border-radius:3px"></div>
+            </div>
+            <span style="color:${b.color};text-align:right">${isNaN(b.val)?'—':(b.val*100).toFixed(0)}%</span>
+          </div>`).join('')}
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:${['#1db954','#38bdf8','#a855f7','#facc15','#ff6b35'][idx%5]}">${isNaN(pop)?'—':pop.toFixed(0)}</div>
+        <div style="font-size:0.58rem;color:var(--muted)">avg pop</div>
+      </div>`;
+    container.appendChild(row);
+  });
+}
+
+// ── MOOD QUADRANTS ──
+function buildMoodIntelligence(songs, nums) {
+  const quadrants = [
+    { name:'😤 Turbulent', desc:'High Energy, Low Vibe',  eMin:0.5, eMax:1, vMin:0, vMax:0.5, color:'#f87171' },
+    { name:'🎉 Euphoric',  desc:'High Energy, High Vibe', eMin:0.5, eMax:1, vMin:0.5, vMax:1, color:'#1db954' },
+    { name:'😢 Melancholy',desc:'Low Energy, Low Vibe',   eMin:0, eMax:0.5, vMin:0, vMax:0.5, color:'#a855f7' },
+    { name:'😌 Peaceful',  desc:'Low Energy, High Vibe',  eMin:0, eMax:0.5, vMin:0.5, vMax:1, color:'#38bdf8' },
+  ];
+  const qEl = document.getElementById('mood-quadrants');
+  if (qEl) {
+    quadrants.forEach(q => {
+      const n = songs.filter(s => {
+        const e = parseFloat(s['Energy']), v = parseFloat(s['Valence']);
+        return !isNaN(e)&&!isNaN(v)&&e>=q.eMin&&e<q.eMax&&v>=q.vMin&&v<q.vMax;
+      }).length;
+      const pct = (n/songs.length*100).toFixed(0);
+      qEl.innerHTML += `
+        <div style="background:${q.color}12;border:1px solid ${q.color}33;border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:1.4rem;margin-bottom:6px">${q.name.split(' ')[0]}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;color:${q.color}">${pct}%</div>
+          <div style="font-size:0.65rem;color:var(--muted);margin-top:4px">${q.name.split(' ').slice(1).join(' ')}</div>
+          <div style="font-size:0.6rem;color:var(--muted)">${n} tracks</div>
+        </div>`;
+    });
+  }
+
+  // Energy tiers
+  const eTiers = [
+    { label:'Intense (>0.8)',    min:0.8, max:1,   color:'#f87171' },
+    { label:'High (0.6–0.8)',    min:0.6, max:0.8, color:'#ff6b35' },
+    { label:'Moderate (0.4–0.6)',min:0.4, max:0.6, color:'#facc15' },
+    { label:'Low (0.2–0.4)',     min:0.2, max:0.4, color:'#38bdf8' },
+    { label:'Chill (<0.2)',      min:0,   max:0.2, color:'#a855f7' },
+  ];
+  const eEl = document.getElementById('energy-tiers');
+  if (eEl) {
+    eTiers.forEach(t => {
+      const n = nums.energy.filter(v=>v>=t.min&&v<t.max).length;
+      const pct = (n/nums.energy.length*100).toFixed(0);
+      eEl.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.7rem;gap:10px">
+        <span style="color:var(--muted);min-width:140px">${t.label}</span>
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${t.color};border-radius:4px"></div>
+        </div>
+        <span style="color:${t.color};width:36px;text-align:right">${pct}%</span>
+      </div>`;
+    });
+  }
+
+  const vTiers = [
+    { label:'Very Happy (>0.8)', min:0.8, max:1,   color:'#facc15' },
+    { label:'Happy (0.6–0.8)',   min:0.6, max:0.8, color:'#1db954' },
+    { label:'Neutral (0.4–0.6)', min:0.4, max:0.6, color:'#38bdf8' },
+    { label:'Sad (0.2–0.4)',     min:0.2, max:0.4, color:'#a855f7' },
+    { label:'Very Sad (<0.2)',   min:0,   max:0.2, color:'#f87171' },
+  ];
+  const vEl = document.getElementById('valence-tiers');
+  if (vEl) {
+    vTiers.forEach(t => {
+      const n = nums.valence.filter(v=>v>=t.min&&v<t.max).length;
+      const pct = (n/nums.valence.length*100).toFixed(0);
+      vEl.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.7rem;gap:10px">
+        <span style="color:var(--muted);min-width:140px">${t.label}</span>
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${t.color};border-radius:4px"></div>
+        </div>
+        <span style="color:${t.color};width:36px;text-align:right">${pct}%</span>
+      </div>`;
+    });
+  }
+}
+
+// ── RELEASE PATTERNS ──
+function buildReleasePatterns(songs, nums) {
+  // Month of release
+  const relMonths = Array(12).fill(0);
+  const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  songs.forEach(s => {
+    const d = s['Release Date'];
+    if (!d || d.length < 7) return;
+    const m = parseInt(d.slice(5,7)) - 1;
+    if (m>=0&&m<12) relMonths[m]++;
+  });
+  const rmCanvas = document.getElementById('release-month-canvas');
+  if (rmCanvas) {
+    const ctx = rmCanvas.getContext('2d');
+    const W = rmCanvas.width, H = rmCanvas.height - 20;
+    const maxV = Math.max(...relMonths);
+    const bw = W/12;
+    ctx.clearRect(0,0,W,rmCanvas.height);
+    relMonths.forEach((v,i) => {
+      const bh = (v/maxV)*H;
+      const hue = (i/12)*60+160;
+      ctx.fillStyle = `hsla(${hue},65%,55%,0.85)`;
+      ctx.beginPath(); ctx.roundRect(i*bw+2, H-bh, bw-4, bh, [3,3,0,0]); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font='9px DM Mono'; ctx.textAlign='center';
+      ctx.fillText(MONTHS_S[i], i*bw+bw/2, H+14);
+    });
+  }
+  const rmLabels = document.getElementById('release-month-labels');
+  if (rmLabels) rmLabels.innerHTML = '';
+
+  // Newness vs Nostalgia
+  const gaps = songs.map(s => {
+    if (!s['Release Date'] || !s['Added At']) return null;
+    const rel = new Date(s['Release Date']);
+    const added = new Date(s['Added At']);
+    const diffDays = (added - rel) / 86400000;
+    return isNaN(diffDays) || diffDays < 0 ? null : diffDays;
+  }).filter(v => v !== null);
+
+  const avgGap = avg(gaps);
+  const medGap = gaps.sort((a,b)=>a-b)[Math.floor(gaps.length/2)];
+  const sameYear = gaps.filter(g=>g<365).length;
+  const oldSongs = gaps.filter(g=>g>365*5).length;
+
+  const nEl = document.getElementById('newness-stats');
+  if (nEl) {
+    [
+      { label:'Avg gap (release → save)', value: avgGap>365 ? (avgGap/365).toFixed(1)+' yrs' : Math.round(avgGap)+' days', color:'#1db954' },
+      { label:'Median gap', value: medGap>365 ? (medGap/365).toFixed(1)+' yrs' : Math.round(medGap)+' days', color:'#38bdf8' },
+      { label:'Saved within 1 year of release', value: sameYear+' tracks ('+(sameYear/songs.length*100).toFixed(0)+'%)', color:'#facc15' },
+      { label:'Saved 5+ years after release', value: oldSongs+' tracks ('+(oldSongs/songs.length*100).toFixed(0)+'%)', color:'#a855f7' },
+    ].forEach(item => {
+      nEl.innerHTML += `<div style="display:flex;justify-content:space-between;font-size:0.72rem;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">${item.label}</span>
+        <span style="color:${item.color};font-weight:700">${item.value}</span>
+      </div>`;
+    });
+  }
+
+  // Newness histogram
+  const nnCanvas = document.getElementById('newness-canvas');
+  if (nnCanvas && gaps.length) {
+    const gapsYears = gaps.map(g=>Math.min(30, g/365));
+    drawHistogram('newness-canvas','newness-labels', gapsYears, 20, 0, 30, '#a855f7', '');
+    const nnLabels = document.getElementById('newness-labels');
+    if (nnLabels) {
+      nnLabels.innerHTML='';
+      for(let i=0;i<=4;i++){const sp=document.createElement('span');sp.textContent=i*7.5+'yr';nnLabels.appendChild(sp);}
+    }
+  }
+}
+
+// ── COLLECTION ANALYTICS ──
+function buildCollectionAnalytics(songs, nums) {
+  // Sort by added date
+  const sorted = songs.filter(s=>s['Added At']).sort((a,b)=>a['Added At'].localeCompare(b['Added At']));
+  if (!sorted.length) return;
+
+  // Cumulative growth line
+  const cumCanvas = document.getElementById('cumulative-canvas');
+  if (cumCanvas) {
+    const ctx = cumCanvas.getContext('2d');
+    const W = cumCanvas.width, H = cumCanvas.height;
+    ctx.clearRect(0,0,W,H);
+    const grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'rgba(29,185,84,0.18)');
+    grad.addColorStop(1,'rgba(29,185,84,0)');
+    ctx.beginPath();
+    sorted.forEach((s,i) => {
+      const x = (i/sorted.length)*W;
+      const y = H - ((i+1)/sorted.length)*H;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath();
+    sorted.forEach((s,i) => {
+      const x=(i/sorted.length)*W, y=H-((i+1)/sorted.length)*H;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='#1db954'; ctx.lineWidth=2; ctx.stroke();
+  }
+
+  // Save rate (weekly rolling)
+  const weekCounts = {};
+  sorted.forEach(s => {
+    const d = new Date(s['Added At']);
+    const week = new Date(d.getFullYear(), 0, 1 + Math.floor(d.getDayOfYear? d.getDayOfYear()-1 : (d - new Date(d.getFullYear(),0,1))/86400000/7)*7);
+    const key = s['Added At'].slice(0,10).slice(0,7); // monthly
+    weekCounts[key] = (weekCounts[key]||0)+1;
+  });
+  const srCanvas = document.getElementById('save-rate-canvas');
+  if (srCanvas) {
+    const entries = Object.entries(weekCounts).sort();
+    const ctx = srCanvas.getContext('2d');
+    const W = srCanvas.width, H = srCanvas.height;
+    const vals = entries.map(e=>e[1]);
+    const maxV = Math.max(...vals);
+    ctx.clearRect(0,0,W,H);
+    const grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'rgba(250,204,21,0.2)');
+    grad.addColorStop(1,'rgba(250,204,21,0)');
+    ctx.beginPath();
+    vals.forEach((v,i) => {
+      const x=(i/(vals.length-1))*W, y=H-(v/maxV)*H;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+    ctx.fillStyle=grad; ctx.fill();
+    ctx.beginPath();
+    vals.forEach((v,i) => {
+      const x=(i/(vals.length-1))*W, y=H-(v/maxV)*H;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='#facc15'; ctx.lineWidth=2; ctx.stroke();
+  }
+
+  // Library at a glance
+  const glanceEl = document.getElementById('library-glance');
+  if (glanceEl) {
+    const first = sorted[0], last = sorted[sorted.length-1];
+    const spanDays = sorted.length>1?Math.round((new Date(last['Added At'])-new Date(first['Added At']))/86400000):0;
+    const uniqueArtists = new Set(songs.map(s=>s['Artist Name(s)'].split(';')[0].trim())).size;
+    const uniqueAlbums = new Set(songs.map(s=>s['Album Name'])).size;
+    const multiArtist = songs.filter(s=>s['Artist Name(s)'].includes(';')).length;
+    const totalMinutes = Math.round(nums.dur.reduce((a,b)=>a+b,0)/60000);
+    const items = [
+      { label:'Total listening time', value: totalMinutes>1440 ? (totalMinutes/1440).toFixed(1)+' days' : totalMinutes+' min', color:'#1db954' },
+      { label:'Unique artists', value: uniqueArtists, color:'#38bdf8' },
+      { label:'Unique albums', value: uniqueAlbums, color:'#a855f7' },
+      { label:'Collaborations (multi-artist)', value: multiArtist, color:'#facc15' },
+      { label:'Library span', value: spanDays+' days', color:'#ff6b35' },
+      { label:'First saved', value: first['Added At'].slice(0,10), color:'#f472b6' },
+    ];
+    items.forEach(item => {
+      glanceEl.innerHTML += `<div style="display:flex;justify-content:space-between;font-size:0.72rem;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="color:var(--muted)">${item.label}</span>
+        <span style="color:${item.color};font-weight:700">${item.value}</span>
+      </div>`;
+    });
+  }
+}
+
 // ── ROUNDRECT POLYFILL ──
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
@@ -3103,6 +3687,104 @@ buildAll = function() {
   const moodCanvas = document.getElementById('mood-canvas');
   if (moodCanvas) setupTooltip(moodCanvas, songs);
 };
+
+// ═══════════════════════════════════════════════
+// BACKGROUND CANVAS ANIMATION
+// ═══════════════════════════════════════════════
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  // Orb definitions
+  const orbs = [
+    { x: 0.15, y: 0.2,  r: 0.45, color: [29,  185, 84],  speed: 0.00018, phase: 0 },
+    { x: 0.85, y: 0.75, r: 0.38, color: [168, 85,  247], speed: 0.00013, phase: 2.1 },
+    { x: 0.5,  y: 0.5,  r: 0.32, color: [56,  189, 248], speed: 0.00021, phase: 4.2 },
+    { x: 0.2,  y: 0.8,  r: 0.28, color: [255, 107, 53],  speed: 0.00016, phase: 1.1 },
+    { x: 0.8,  y: 0.15, r: 0.25, color: [244, 114, 182], speed: 0.00019, phase: 3.3 },
+  ];
+
+  // Floating particles
+  const particles = Array.from({ length: 55 }, () => ({
+    x:    Math.random(),
+    y:    Math.random(),
+    size: Math.random() * 1.8 + 0.4,
+    vx:   (Math.random() - 0.5) * 0.00012,
+    vy:   (Math.random() - 0.5) * 0.00012,
+    opacity: Math.random() * 0.5 + 0.1,
+    color: [[29,185,84],[168,85,247],[56,189,248],[255,107,53]][Math.floor(Math.random()*4)],
+    pulse: Math.random() * Math.PI * 2,
+    pulseSpeed: 0.008 + Math.random() * 0.012,
+  }));
+
+  // Grid lines (subtle)
+  const GRID = 80;
+
+  let W, H, t = 0;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function draw(ts) {
+    t = ts * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    // ── Orbs ──
+    orbs.forEach(o => {
+      const ox = (o.x + Math.sin(t * o.speed * 1000 + o.phase) * 0.18) * W;
+      const oy = (o.y + Math.cos(t * o.speed * 800  + o.phase) * 0.14) * H;
+      const r  = o.r * Math.min(W, H);
+      const g  = ctx.createRadialGradient(ox, oy, 0, ox, oy, r);
+      g.addColorStop(0,   `rgba(${o.color},0.13)`);
+      g.addColorStop(0.4, `rgba(${o.color},0.06)`);
+      g.addColorStop(1,   `rgba(${o.color},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(ox, oy, r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // ── Grid ──
+    ctx.strokeStyle = 'rgba(255,255,255,0.018)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += GRID) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += GRID) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // ── Particles ──
+    particles.forEach(p => {
+      p.pulse += p.pulseSpeed;
+      const alpha = p.opacity * (0.5 + 0.5 * Math.sin(p.pulse));
+      const px = ((p.x + t * p.vx * 100) % 1 + 1) % 1 * W;
+      const py = ((p.y + t * p.vy * 100) % 1 + 1) % 1 * H;
+      ctx.beginPath();
+      ctx.arc(px, py, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${alpha})`;
+      ctx.fill();
+    });
+
+    // ── Horizontal scan line ──
+    const scanY = ((t * 40) % (H + 60)) - 30;
+    const scanG = ctx.createLinearGradient(0, scanY - 30, 0, scanY + 30);
+    scanG.addColorStop(0,   'rgba(29,185,84,0)');
+    scanG.addColorStop(0.5, 'rgba(29,185,84,0.025)');
+    scanG.addColorStop(1,   'rgba(29,185,84,0)');
+    ctx.fillStyle = scanG;
+    ctx.fillRect(0, scanY - 30, W, 60);
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+
 </script>
 </body>
 </html>
