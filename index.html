@@ -3500,107 +3500,60 @@ function buildArchetypeCanvas() {
 
   // ── "The" in white ──
   ctx.font = '300 40px "Syne", sans-serif';
-  ctx.fillStyle = 'rgba(240,239,232,0.55)';
+  ctx.fillStyle = 'rgba(240,239,232,0.45)';
   ctx.fillText('The', 48, 164);
 
-  // ── Archetype name (split words, scale to fit left column, fade right) ──
-  const nameColRight = 490; // right edge of left column — description starts at 520
-  const nameColWidth = nameColRight - 48;
+  // ── Archetype name — full width, huge, drawn FIRST as background layer ──
   const nameParts = a.name.replace(/^The\s+/, '').split(' ');
+  ctx.font = '800 88px "Syne", sans-serif';
+  const lineH = 88 * 1.12;
+  const totalNameH = nameParts.length * lineH;
+  let nameY = 130 + ((H - 110 - 130) - totalNameH) / 2 + 88;
 
-  // Find font size that fits the widest word within the column
-  let fontSize = 68;
-  for (let fs = 68; fs >= 32; fs -= 2) {
-    ctx.font = `800 ${fs}px "Syne", sans-serif`;
-    const maxW = Math.max(...nameParts.map(w => ctx.measureText(w).width));
-    if (maxW <= nameColWidth) { fontSize = fs; break; }
-  }
-  ctx.font = `800 ${fontSize}px "Syne", sans-serif`;
-  const lineH = fontSize * 1.15;
-
-  // Draw each word on its own line
-  const nameLines = nameParts;
-  const totalNameH = nameLines.length * lineH;
-  // Start so the block is vertically centred between y=130 and y=370
-  let nameY = 130 + ((370 - 130) - totalNameH) / 2 + fontSize;
-
-  nameLines.forEach((word, i) => {
-    // Alternate colour: first word gets archetype colour, rest get off-white
-    const wordColor = i === 0 ? a.color : 'rgba(240,239,232,0.9)';
-
-    // Draw the text
-    ctx.save();
-    // Clip to left column so text never bleeds into description
-    ctx.beginPath();
-    ctx.rect(48, 0, nameColWidth + 80, H); // give a little extra then fade covers the rest
-    ctx.clip();
-    ctx.fillStyle = wordColor;
+  nameParts.forEach((word, i) => {
+    ctx.font = '800 88px "Syne", sans-serif';
+    ctx.fillStyle = i === 0 ? a.color : 'rgba(240,239,232,0.88)';
     ctx.fillText(word, 48, nameY);
-    ctx.restore();
-
-    // Gradient fade over the right portion of the name
-    const textW = ctx.measureText(word).width;
-    const fadeStart = Math.min(48 + textW - 60, nameColRight - 60);
-    const fadeEnd   = nameColRight + 40;
-    if (fadeStart < fadeEnd) {
-      const fade = ctx.createLinearGradient(fadeStart, 0, fadeEnd, 0);
-      fade.addColorStop(0, 'rgba(0,0,0,0)');
-      fade.addColorStop(1, '#0d0d1a'); // match bg mid-colour
-      ctx.save();
-      ctx.fillStyle = fade;
-      ctx.fillRect(fadeStart, nameY - fontSize - 4, fadeEnd - fadeStart + 4, lineH + 8);
-      ctx.restore();
-    }
-
     nameY += lineH;
   });
 
-  // ── Trait chips ──
-  ctx.font = '500 11px "DM Mono", monospace';
-  let tx = 48;
-  const traitY = H - 70;
-  (a.traits || []).forEach(trait => {
-    const tw = ctx.measureText(trait).width + 22;
-    // chip bg
-    ctx.fillStyle = a.color + '22';
-    ctx.beginPath(); ctx.roundRect(tx, traitY, tw, 24, 12); ctx.fill();
-    // chip border
-    ctx.strokeStyle = a.color + '66';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.roundRect(tx, traitY, tw, 24, 12); ctx.stroke();
-    // chip text
-    ctx.fillStyle = a.color;
-    ctx.fillText(trait, tx + 11, traitY + 16);
-    tx += tw + 8;
-    if (tx > W - 200) return; // avoid overflow
-  });
+  // ── Frosted overlay for the right-side description panel ──
+  // Sits on top of the name, making it visible-but-behind
+  const descPanelX = 460;
+  const descPanelGrad = ctx.createLinearGradient(descPanelX, 0, descPanelX + 80, 0);
+  descPanelGrad.addColorStop(0, 'rgba(10,11,18,0)');
+  descPanelGrad.addColorStop(1, 'rgba(10,11,18,0.82)');
+  ctx.fillStyle = descPanelGrad;
+  ctx.fillRect(descPanelX, 100, 80, H - 100);
+  // Solid fill for the rest of the right panel
+  ctx.fillStyle = 'rgba(10,11,18,0.82)';
+  ctx.fillRect(descPanelX + 80, 100, W - descPanelX - 80, H - 100);
 
-  // ── Description (right side) ──
+  // ── Description text ──
   const descX = 520, descW = W - descX - 48;
   ctx.font = '400 14px "DM Mono", monospace';
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
   const words = a.desc.split(' ');
-  let line = '', dy = 130;
+  let line = '', dy = 148;
   words.forEach(word => {
     const test = line + (line ? ' ' : '') + word;
     if (ctx.measureText(test).width > descW && line) {
-      if (dy < H - 100) { ctx.fillText(line, descX, dy); dy += 22; }
+      if (dy < H - 120) { ctx.fillText(line, descX, dy); dy += 23; }
       line = word;
     } else { line = test; }
   });
-  if (dy < H - 100) ctx.fillText(line, descX, dy);
+  if (dy < H - 120) ctx.fillText(line, descX, dy);
 
   // ── Stats mini-panel ──
-  const statsY = Math.min(dy + 28, H - 140);
+  const statsY = Math.min(dy + 32, H - 130);
   const statsData = [
-    { label: 'ENERGY',  val: window._archetype._avgEnergy  ? (window._archetype._avgEnergy * 100).toFixed(0)  + '%' : '—' },
-    { label: 'VIBE',    val: window._archetype._avgValence ? (window._archetype._avgValence * 100).toFixed(0) + '%' : '—' },
-    { label: 'DANCE',   val: window._archetype._avgDance   ? (window._archetype._avgDance * 100).toFixed(0)   + '%' : '—' },
+    { label: 'ENERGY',  val: a._avgEnergy  ? (a._avgEnergy  * 100).toFixed(0) + '%' : '—' },
+    { label: 'VIBE',    val: a._avgValence ? (a._avgValence * 100).toFixed(0) + '%' : '—' },
+    { label: 'DANCE',   val: a._avgDance   ? (a._avgDance   * 100).toFixed(0) + '%' : '—' },
   ];
-  ctx.font = '700 10px "DM Mono", monospace';
   let sx = descX;
   statsData.forEach(s => {
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
     ctx.beginPath(); ctx.roundRect(sx, statsY, 90, 46, 8); ctx.fill();
     ctx.fillStyle = a.color;
     ctx.font = '700 16px "Syne", sans-serif';
@@ -3609,6 +3562,23 @@ function buildArchetypeCanvas() {
     ctx.font = '500 9px "DM Mono", monospace';
     ctx.fillText(s.label, sx + 10, statsY + 40);
     sx += 100;
+  });
+
+  // ── Trait chips (bottom left) ──
+  ctx.font = '500 11px "DM Mono", monospace';
+  let tx = 48;
+  const traitY = H - 62;
+  (a.traits || []).forEach(trait => {
+    const tw = ctx.measureText(trait).width + 22;
+    ctx.fillStyle = a.color + '22';
+    ctx.beginPath(); ctx.roundRect(tx, traitY, tw, 24, 12); ctx.fill();
+    ctx.strokeStyle = a.color + '66';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(tx, traitY, tw, 24, 12); ctx.stroke();
+    ctx.fillStyle = a.color;
+    ctx.fillText(trait, tx + 11, traitY + 16);
+    tx += tw + 8;
+    if (tx > descPanelX - 20) return;
   });
 
   // ── Bottom-right watermark ──
