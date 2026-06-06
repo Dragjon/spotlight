@@ -988,6 +988,79 @@ License: MIT
   }
   .streak-day:hover { transform: scale(1.4); }
 
+
+  /* ── STATS TABS ── */
+  .stats-tabs-nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg);
+    padding-top: 16px;
+  }
+
+  .stats-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    position: relative;
+    margin-bottom: -1px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    white-space: nowrap;
+  }
+
+  .stats-tab-btn:hover:not(.active) {
+    color: var(--text);
+    background: rgba(255,255,255,0.04);
+  }
+
+  .stats-tab-btn.active {
+    color: var(--text);
+    background: var(--panel);
+    border-color: var(--border);
+    border-bottom-color: var(--panel);
+  }
+
+  .stats-tab-btn .tab-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  .stats-tab-btn.active .tab-dot { opacity: 1; }
+
+  .stats-tab-pane {
+    display: none;
+    animation: tabFadeIn 0.25s ease both;
+  }
+
+  .stats-tab-pane.active { display: block; }
+
+  @keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 </style>
 </head>
 <body>
@@ -1063,6 +1136,27 @@ License: MIT
     <!-- Hero divider -->
     <div class="hero-divider"><div class="hero-divider-line"></div></div>
 
+    <!-- ── STATS TABS ── -->
+    <nav class="stats-tabs-nav" id="stats-tabs-nav">
+      <button class="stats-tab-btn active" data-tab="overview" onclick="switchStatsTab('overview')">
+        <span class="tab-dot" style="background:var(--accent)"></span> Overview
+      </button>
+      <button class="stats-tab-btn" data-tab="artists" onclick="switchStatsTab('artists')">
+        <span class="tab-dot" style="background:var(--accent2)"></span> Artists &amp; Tracks
+      </button>
+      <button class="stats-tab-btn" data-tab="sound" onclick="switchStatsTab('sound')">
+        <span class="tab-dot" style="background:var(--accent4)"></span> Sound &amp; Mood
+      </button>
+      <button class="stats-tab-btn" data-tab="genres" onclick="switchStatsTab('genres')">
+        <span class="tab-dot" style="background:var(--accent3)"></span> Genres &amp; Labels
+      </button>
+      <button class="stats-tab-btn" data-tab="history" onclick="switchStatsTab('history')">
+        <span class="tab-dot" style="background:#facc15"></span> History
+      </button>
+    </nav>
+
+    <!-- TAB: Overview -->
+    <div class="stats-tab-pane active" id="stats-tab-overview">
     <!-- TOP STATS -->
     <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="7" height="9" x="3" y="3" rx="1"/> <rect width="7" height="5" x="14" y="3" rx="1"/> <rect width="7" height="9" x="14" y="12" rx="1"/> <rect width="7" height="5" x="3" y="16" rx="1"/></svg> Overview</div>
     <div class="stat-row" id="stat-row"></div>
@@ -1070,198 +1164,6 @@ License: MIT
     <!-- INSIGHTS -->
     <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/> <path d="M9 18h6"/> <path d="M10 22h4"/></svg> Key Insights</div>
     <div class="insights" id="insights"></div>
-
-    <!-- TIMELINE -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/> <line x1="16" x2="16" y1="2" y2="6"/> <line x1="8" x2="8" y1="2" y2="6"/> <line x1="3" x2="21" y1="10" y2="10"/> <path d="M8 14h.01"/> <path d="M12 14h.01"/> <path d="M16 14h.01"/> <path d="M8 18h.01"/> <path d="M12 18h.01"/> <path d="M16 18h.01"/></svg> When You Save Songs</div>
-    <div class="panel reveal" id="timeline-panel">
-      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/> <line x1="16" x2="16" y1="2" y2="6"/> <line x1="8" x2="8" y1="2" y2="6"/> <line x1="3" x2="21" y1="10" y2="10"/></svg></span> Songs Added Over Time</div>
-      <div class="timeline" id="timeline"></div>
-    </div>
-
-    <!-- TOP ARTISTS + TOP TRACKS -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/> <circle cx="9" cy="7" r="4"/> <path d="M22 21v-2a4 4 0 0 0-3-3.87"/> <path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Artists & Tracks</div>
-    <div class="grid-2">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/> <path d="M19 10v2a7 7 0 0 1-14 0v-2"/> <line x1="12" x2="12" y1="19" y2="22"/></svg></span> Top Artists</div>
-        <div class="bar-chart" id="artist-bars"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> Most Popular Tracks</div>
-        <div class="track-list" id="top-tracks"></div>
-      </div>
-    </div>
-
-    <!-- AUDIO FEATURES -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="21" x2="14" y1="4" y2="4"/> <line x1="10" x2="3" y1="4" y2="4"/> <line x1="21" x2="12" y1="12" y2="12"/> <line x1="8" x2="3" y1="12" y2="12"/> <line x1="21" x2="16" y1="20" y2="20"/> <line x1="12" x2="3" y1="20" y2="20"/> <line x1="14" x2="14" y1="2" y2="6"/> <line x1="8" x2="8" y1="10" y2="14"/> <line x1="16" x2="16" y1="18" y2="22"/></svg> Audio Features</div>
-    <div class="grid-1-2">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" x2="18" y1="20" y2="10"/> <line x1="12" x2="12" y1="20" y2="4"/> <line x1="6" x2="6" y1="20" y2="14"/></svg></span> Average Profile</div>
-        <div class="feature-bar" id="audio-features"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <line x1="22" x2="18" y1="12" y2="12"/> <line x1="6" x2="2" y1="12" y2="12"/> <line x1="12" x2="12" y1="6" y2="2"/> <line x1="12" x2="12" y1="22" y2="18"/></svg></span> Feature Radar</div>
-        <div class="radar-wrap">
-          <canvas id="radar-canvas" width="380" height="300"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- MOOD MATRIX + VALENCE DIST -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <path d="M8 14s1.5 2 4 2 4-2 4-2"/> <line x1="9" x2="9.01" y1="9" y2="9"/> <line x1="15" x2="15.01" y1="9" y2="9"/></svg> Mood Analysis</div>
-    <div class="grid-2">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> Energy vs. Valence (Mood Map)</div>
-        <div style="text-align:center; margin-bottom:8px;">
-          <span style="font-size:0.65rem; color:var(--muted)">Each dot = one song</span>
-        </div>
-        <canvas id="mood-canvas" width="420" height="300" style="width:100%;cursor:crosshair;"></canvas>
-        <div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--muted);margin-top:6px;">
-          <span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b6b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <path d="M16 16s-1.5-2-4-2-4 2-4 2"/> <line x1="9" x2="9.01" y1="9" y2="9"/> <line x1="15" x2="15.01" y1="9" y2="9"/></svg> Sad</span><span style="display:flex;align-items:center;gap:4px">Happy <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b6b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <path d="M8 14s1.5 2 4 2 4-2 4-2"/> <line x1="9" x2="9.01" y1="9" y2="9"/> <line x1="15" x2="15.01" y1="9" y2="9"/></svg></span>
-        </div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <circle cx="12" cy="12" r="6"/> <circle cx="12" cy="12" r="2"/></svg></span> Valence Distribution</div>
-        <canvas id="valence-canvas" width="420" height="180" style="width:100%"></canvas>
-        <div class="hist-labels" id="valence-labels"></div>
-        <div style="margin-top:20px;">
-          <div class="panel-title" style="font-size:0.85rem;"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/> <circle cx="6" cy="18" r="3"/> <circle cx="18" cy="16" r="3"/></svg></span> Danceability Distribution</div>
-          <canvas id="dance-canvas" width="420" height="120" style="width:100%"></canvas>
-          <div class="hist-labels" id="dance-labels"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- BPM + KEY -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4"/> <path d="M12 18V2l7 4"/></svg> Rhythm & Key</div>
-    <div class="grid-2">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> Tempo Distribution (BPM)</div>
-        <canvas id="tempo-canvas" width="420" height="160" style="width:100%"></canvas>
-        <div class="hist-labels" id="tempo-labels"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/> <circle cx="6" cy="18" r="3"/> <circle cx="18" cy="16" r="3"/></svg></span> Keys Used</div>
-        <div class="key-wheel" id="key-wheel"></div>
-        <div style="margin-top:20px;">
-          <div style="font-size:0.7rem; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em;">Major vs Minor</div>
-          <canvas id="mode-canvas" width="300" height="30" style="width:100%"></canvas>
-          <div style="display:flex;justify-content:space-between;font-size:0.68rem;margin-top:6px;">
-            <span style="color:var(--accent)">Major</span>
-            <span style="color:var(--accent3)">Minor</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- GENRES -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/> <path d="M7 7h.01"/></svg> Genres</div>
-    <div class="grid-2-1">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/> <path d="M7 7h.01"/></svg></span> Genre Distribution</div>
-        <div class="bar-chart" id="genre-bars"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></span> Genre Cloud</div>
-        <div class="genre-cloud" id="genre-cloud"></div>
-      </div>
-    </div>
-
-    <!-- RECORD LABELS + EXPLICIT -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/> <path d="M9 22v-4h6v4"/> <path d="M8 6h.01"/> <path d="M16 6h.01"/> <path d="M12 6h.01"/> <path d="M12 10h.01"/> <path d="M12 14h.01"/> <path d="M16 10h.01"/> <path d="M16 14h.01"/> <path d="M8 10h.01"/> <path d="M8 14h.01"/></svg> Labels & Content</div>
-    <div class="grid-2">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/> <path d="M9 22v-4h6v4"/> <path d="M8 6h.01"/> <path d="M16 6h.01"/> <path d="M12 6h.01"/> <path d="M12 10h.01"/> <path d="M12 14h.01"/> <path d="M16 10h.01"/> <path d="M16 14h.01"/> <path d="M8 10h.01"/> <path d="M8 14h.01"/></svg></span> Top Record Labels</div>
-        <div class="bar-chart" id="label-bars"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <line x1="12" x2="12" y1="8" y2="12"/> <line x1="12" x2="12.01" y1="16" y2="16"/></svg></span> Explicit Content</div>
-        <canvas id="explicit-canvas" width="300" height="300" style="max-width:200px;display:block;margin:0 auto;"></canvas>
-        <div class="donut-legend" id="explicit-legend"></div>
-        <div style="margin-top:24px;">
-          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Popularity Distribution</div>
-          <canvas id="pop-canvas" width="300" height="80" style="width:100%"></canvas>
-          <div class="hist-labels" id="pop-labels"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RELEASE YEARS -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/> <line x1="16" x2="16" y1="2" y2="6"/> <line x1="8" x2="8" y1="2" y2="6"/> <line x1="3" x2="21" y1="10" y2="10"/></svg> Release Years</div>
-    <div class="panel reveal">
-      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/> <line x1="16" x2="16" y1="2" y2="6"/> <line x1="8" x2="8" y1="2" y2="6"/> <line x1="3" x2="21" y1="10" y2="10"/> <path d="M8 14h.01"/> <path d="M12 14h.01"/> <path d="M16 14h.01"/> <path d="M8 18h.01"/> <path d="M12 18h.01"/> <path d="M16 18h.01"/></svg></span> Songs by Release Year</div>
-      <canvas id="year-canvas" width="1000" height="180" style="width:100%"></canvas>
-      <div class="hist-labels" id="year-labels"></div>
-    </div>
-
-    <!-- DURATION -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="10" x2="14" y1="2" y2="2"/> <line x1="12" x2="15" y1="14" y2="11"/> <circle cx="12" cy="14" r="8"/></svg> Song Duration</div>
-    <div class="grid-2">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="10" x2="14" y1="2" y2="2"/> <line x1="12" x2="15" y1="14" y2="11"/> <circle cx="12" cy="14" r="8"/></svg></span> Duration Distribution</div>
-        <canvas id="dur-canvas" width="420" height="140" style="width:100%"></canvas>
-        <div class="hist-labels" id="dur-labels"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Feature Correlations</div>
-        <div id="correlations" style="display:flex;flex-direction:column;gap:10px;"></div>
-      </div>
-    </div>
-
-    <!-- OUTLIERS -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="8" r="6"/> <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg> Extremes & Outliers</div>
-    <div class="grid-3" id="extremes-grid"></div>
-
-    <!-- ACOUSTICNESS + INSTRUMENTALNESS -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4"/> <path d="M12 18V2l7 4"/></svg> Acoustic & Instrumental</div>
-    <div class="grid-2">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4"/> <path d="M12 18V2l7 4"/></svg></span> Acousticness Spectrum</div>
-        <canvas id="acoustic-canvas" width="420" height="140" style="width:100%"></canvas>
-        <div class="hist-labels" id="acoustic-labels"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="20" height="16" x="2" y="4" rx="2" ry="2"/> <path d="M6 8h.001"/> <path d="M10 8h.001"/> <path d="M14 8h.001"/> <path d="M18 8h.001"/> <path d="M8 12h.001"/> <path d="M12 12h.001"/> <path d="M16 12h.001"/> <path d="M7 16h10"/></svg></span> Instrumentalness Spectrum</div>
-        <canvas id="instr-canvas" width="420" height="140" style="width:100%"></canvas>
-        <div class="hist-labels" id="instr-labels"></div>
-      </div>
-    </div>
-
-    <!-- LIVENESS + SPEECHINESS -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/> <path d="M19 10v2a7 7 0 0 1-14 0v-2"/> <line x1="12" x2="12" y1="19" y2="22"/></svg> Live & Spoken</div>
-    <div class="grid-2">
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/> <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/> <circle cx="12" cy="12" r="2"/> <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/> <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg></span> Liveness Score</div>
-        <canvas id="live-canvas" width="420" height="120" style="width:100%"></canvas>
-        <div class="hist-labels" id="live-labels"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/> <path d="M19 10v2a7 7 0 0 1-14 0v-2"/> <line x1="12" x2="12" y1="19" y2="22"/></svg></span> Speechiness Score</div>
-        <canvas id="speech-canvas" width="420" height="120" style="width:100%"></canvas>
-        <div class="hist-labels" id="speech-labels"></div>
-      </div>
-    </div>
-
-    <!-- LOUDNESS -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/> <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/> <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> Loudness</div>
-    <div class="panel reveal">
-      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/> <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/> <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span> Loudness Distribution (dBFS)</div>
-      <canvas id="loud-canvas" width="1000" height="140" style="width:100%"></canvas>
-      <div class="hist-labels" id="loud-labels"></div>
-    </div>
-
 
     <!-- ══════════════════════════════════════════════
          PERSONAL MUSIC PROFILE
@@ -1410,43 +1312,150 @@ License: MIT
     </div>
 
 
-    <!-- ═══ LISTENING HABITS ═══ -->
+
+    </div><!-- /tab overview -->
+
+    <!-- TAB: Artists & Tracks -->
+    <div class="stats-tab-pane" id="stats-tab-artists">
+    <!-- TOP ARTISTS + TOP TRACKS -->
     <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Listening Habits</div>
-    <div class="grid-3">
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/> <circle cx="9" cy="7" r="4"/> <path d="M22 21v-2a4 4 0 0 0-3-3.87"/> <path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Artists & Tracks</div>
+    <div class="grid-2">
       <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Day-of-Week Saves</div>
-        <canvas id="dow-canvas" width="400" height="200" style="width:100%"></canvas>
-        <div class="hist-labels" id="dow-labels"></div>
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/> <path d="M19 10v2a7 7 0 0 1-14 0v-2"/> <line x1="12" x2="12" y1="19" y2="22"/></svg></span> Top Artists</div>
+        <div class="bar-chart" id="artist-bars"></div>
       </div>
       <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Month-of-Year Saves</div>
-        <canvas id="moy-canvas" width="400" height="200" style="width:100%"></canvas>
-        <div class="hist-labels" id="moy-labels"></div>
-      </div>
-      <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span> Saving Streaks</div>
-        <div id="streak-stats" style="display:flex;flex-direction:column;gap:14px;padding-top:4px"></div>
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> Most Popular Tracks</div>
+        <div class="track-list" id="top-tracks"></div>
       </div>
     </div>
 
-    <!-- ═══ DIVERSITY & VARIETY ═══ -->
+    <!-- OUTLIERS -->
     <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="16 3 21 3 21 8"/><line x1="4" x2="21" y1="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" x2="21" y1="15" y2="21"/><line x1="4" x2="9" y1="3" y2="9"/></svg> Library Diversity</div>
-    <div class="grid-2">
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="8" r="6"/> <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg> Extremes & Outliers</div>
+    <div class="grid-3" id="extremes-grid"></div>
+
+    <!-- ═══ ARTIST DEEP DIVE ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Artist Deep Dive</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg></span> Top 10 Artist Profiles</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:16px">Audio fingerprint of your most-saved artists</div>
+      <div id="artist-profiles" style="display:flex;flex-direction:column;gap:0"></div>
+    </div>
+
+
+    </div><!-- /tab artists -->
+
+    <!-- TAB: Sound & Mood -->
+    <div class="stats-tab-pane" id="stats-tab-sound">
+    <!-- AUDIO FEATURES -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="21" x2="14" y1="4" y2="4"/> <line x1="10" x2="3" y1="4" y2="4"/> <line x1="21" x2="12" y1="12" y2="12"/> <line x1="8" x2="3" y1="12" y2="12"/> <line x1="21" x2="16" y1="20" y2="20"/> <line x1="12" x2="3" y1="20" y2="20"/> <line x1="14" x2="14" y1="2" y2="6"/> <line x1="8" x2="8" y1="10" y2="14"/> <line x1="16" x2="16" y1="18" y2="22"/></svg> Audio Features</div>
+    <div class="grid-1-2">
       <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span> Artist Concentration</div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:12px">How spread out are your listens across artists?</div>
-        <canvas id="concentration-canvas" width="500" height="160" style="width:100%"></canvas>
-        <div id="concentration-stats" style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-size:0.72rem;"></div>
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" x2="18" y1="20" y2="10"/> <line x1="12" x2="12" y1="20" y2="4"/> <line x1="6" x2="6" y1="20" y2="14"/></svg></span> Average Profile</div>
+        <div class="feature-bar" id="audio-features"></div>
       </div>
       <div class="panel reveal">
-        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span> Songs per Artist Distribution</div>
-        <canvas id="songs-per-artist-canvas" width="500" height="160" style="width:100%"></canvas>
-        <div class="hist-labels" id="spa-labels"></div>
-        <div id="spa-stats" style="margin-top:12px;font-size:0.72rem;color:var(--muted)"></div>
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <line x1="22" x2="18" y1="12" y2="12"/> <line x1="6" x2="2" y1="12" y2="12"/> <line x1="12" x2="12" y1="6" y2="2"/> <line x1="12" x2="12" y1="22" y2="18"/></svg></span> Feature Radar</div>
+        <div class="radar-wrap">
+          <canvas id="radar-canvas" width="380" height="300"></canvas>
+        </div>
       </div>
     </div>
+
+    <!-- MOOD MATRIX + VALENCE DIST -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <path d="M8 14s1.5 2 4 2 4-2 4-2"/> <line x1="9" x2="9.01" y1="9" y2="9"/> <line x1="15" x2="15.01" y1="9" y2="9"/></svg> Mood Analysis</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> Energy vs. Valence (Mood Map)</div>
+        <div style="text-align:center; margin-bottom:8px;">
+          <span style="font-size:0.65rem; color:var(--muted)">Each dot = one song</span>
+        </div>
+        <canvas id="mood-canvas" width="420" height="300" style="width:100%;cursor:crosshair;"></canvas>
+        <div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--muted);margin-top:6px;">
+          <span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b6b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <path d="M16 16s-1.5-2-4-2-4 2-4 2"/> <line x1="9" x2="9.01" y1="9" y2="9"/> <line x1="15" x2="15.01" y1="9" y2="9"/></svg> Sad</span><span style="display:flex;align-items:center;gap:4px">Happy <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b6b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <path d="M8 14s1.5 2 4 2 4-2 4-2"/> <line x1="9" x2="9.01" y1="9" y2="9"/> <line x1="15" x2="15.01" y1="9" y2="9"/></svg></span>
+        </div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <circle cx="12" cy="12" r="6"/> <circle cx="12" cy="12" r="2"/></svg></span> Valence Distribution</div>
+        <canvas id="valence-canvas" width="420" height="180" style="width:100%"></canvas>
+        <div class="hist-labels" id="valence-labels"></div>
+        <div style="margin-top:20px;">
+          <div class="panel-title" style="font-size:0.85rem;"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/> <circle cx="6" cy="18" r="3"/> <circle cx="18" cy="16" r="3"/></svg></span> Danceability Distribution</div>
+          <canvas id="dance-canvas" width="420" height="120" style="width:100%"></canvas>
+          <div class="hist-labels" id="dance-labels"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BPM + KEY -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4"/> <path d="M12 18V2l7 4"/></svg> Rhythm & Key</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> Tempo Distribution (BPM)</div>
+        <canvas id="tempo-canvas" width="420" height="160" style="width:100%"></canvas>
+        <div class="hist-labels" id="tempo-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/> <circle cx="6" cy="18" r="3"/> <circle cx="18" cy="16" r="3"/></svg></span> Keys Used</div>
+        <div class="key-wheel" id="key-wheel"></div>
+        <div style="margin-top:20px;">
+          <div style="font-size:0.7rem; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.08em;">Major vs Minor</div>
+          <canvas id="mode-canvas" width="300" height="30" style="width:100%"></canvas>
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem;margin-top:6px;">
+            <span style="color:var(--accent)">Major</span>
+            <span style="color:var(--accent3)">Minor</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACOUSTICNESS + INSTRUMENTALNESS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4"/> <path d="M12 18V2l7 4"/></svg> Acoustic & Instrumental</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="8" cy="18" r="4"/> <path d="M12 18V2l7 4"/></svg></span> Acousticness Spectrum</div>
+        <canvas id="acoustic-canvas" width="420" height="140" style="width:100%"></canvas>
+        <div class="hist-labels" id="acoustic-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="20" height="16" x="2" y="4" rx="2" ry="2"/> <path d="M6 8h.001"/> <path d="M10 8h.001"/> <path d="M14 8h.001"/> <path d="M18 8h.001"/> <path d="M8 12h.001"/> <path d="M12 12h.001"/> <path d="M16 12h.001"/> <path d="M7 16h10"/></svg></span> Instrumentalness Spectrum</div>
+        <canvas id="instr-canvas" width="420" height="140" style="width:100%"></canvas>
+        <div class="hist-labels" id="instr-labels"></div>
+      </div>
+    </div>
+
+    <!-- LIVENESS + SPEECHINESS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/> <path d="M19 10v2a7 7 0 0 1-14 0v-2"/> <line x1="12" x2="12" y1="19" y2="22"/></svg> Live & Spoken</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/> <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/> <circle cx="12" cy="12" r="2"/> <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/> <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg></span> Liveness Score</div>
+        <canvas id="live-canvas" width="420" height="120" style="width:100%"></canvas>
+        <div class="hist-labels" id="live-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/> <path d="M19 10v2a7 7 0 0 1-14 0v-2"/> <line x1="12" x2="12" y1="19" y2="22"/></svg></span> Speechiness Score</div>
+        <canvas id="speech-canvas" width="420" height="120" style="width:100%"></canvas>
+        <div class="hist-labels" id="speech-labels"></div>
+      </div>
+    </div>
+
+    <!-- LOUDNESS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/> <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/> <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> Loudness</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/> <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/> <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span> Loudness Distribution (dBFS)</div>
+      <canvas id="loud-canvas" width="1000" height="140" style="width:100%"></canvas>
+      <div class="hist-labels" id="loud-labels"></div>
+    </div>
+
 
     <!-- ═══ DEEP AUDIO ANALYSIS ═══ -->
     <div class="section-divider"></div>
@@ -1481,15 +1490,6 @@ License: MIT
       </div>
     </div>
 
-    <!-- ═══ ARTIST DEEP DIVE ═══ -->
-    <div class="section-divider"></div>
-    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Artist Deep Dive</div>
-    <div class="panel reveal">
-      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg></span> Top 10 Artist Profiles</div>
-      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:16px">Audio fingerprint of your most-saved artists</div>
-      <div id="artist-profiles" style="display:flex;flex-direction:column;gap:0"></div>
-    </div>
-
     <!-- ═══ MOOD INTELLIGENCE ═══ -->
     <div class="section-divider"></div>
     <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg> Mood Intelligence</div>
@@ -1507,6 +1507,120 @@ License: MIT
           <div class="panel-title" style="font-size:0.88rem;"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg></span> Valence Tiers</div>
           <div id="valence-tiers" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
         </div>
+      </div>
+    </div>
+
+
+    </div><!-- /tab sound -->
+
+    <!-- TAB: Genres & Labels -->
+    <div class="stats-tab-pane" id="stats-tab-genres">
+    <!-- GENRES -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/> <path d="M7 7h.01"/></svg> Genres</div>
+    <div class="grid-2-1">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/> <path d="M7 7h.01"/></svg></span> Genre Distribution</div>
+        <div class="bar-chart" id="genre-bars"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></span> Genre Cloud</div>
+        <div class="genre-cloud" id="genre-cloud"></div>
+      </div>
+    </div>
+
+    <!-- RECORD LABELS + EXPLICIT -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/> <path d="M9 22v-4h6v4"/> <path d="M8 6h.01"/> <path d="M16 6h.01"/> <path d="M12 6h.01"/> <path d="M12 10h.01"/> <path d="M12 14h.01"/> <path d="M16 10h.01"/> <path d="M16 14h.01"/> <path d="M8 10h.01"/> <path d="M8 14h.01"/></svg> Labels & Content</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/> <path d="M9 22v-4h6v4"/> <path d="M8 6h.01"/> <path d="M16 6h.01"/> <path d="M12 6h.01"/> <path d="M12 10h.01"/> <path d="M12 14h.01"/> <path d="M16 10h.01"/> <path d="M16 14h.01"/> <path d="M8 10h.01"/> <path d="M8 14h.01"/></svg></span> Top Record Labels</div>
+        <div class="bar-chart" id="label-bars"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <line x1="12" x2="12" y1="8" y2="12"/> <line x1="12" x2="12.01" y1="16" y2="16"/></svg></span> Explicit Content</div>
+        <canvas id="explicit-canvas" width="300" height="300" style="max-width:200px;display:block;margin:0 auto;"></canvas>
+        <div class="donut-legend" id="explicit-legend"></div>
+        <div style="margin-top:24px;">
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Popularity Distribution</div>
+          <canvas id="pop-canvas" width="300" height="80" style="width:100%"></canvas>
+          <div class="hist-labels" id="pop-labels"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DIVERSITY & VARIETY ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="16 3 21 3 21 8"/><line x1="4" x2="21" y1="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" x2="21" y1="15" y2="21"/><line x1="4" x2="9" y1="3" y2="9"/></svg> Library Diversity</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span> Artist Concentration</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:12px">How spread out are your listens across artists?</div>
+        <canvas id="concentration-canvas" width="500" height="160" style="width:100%"></canvas>
+        <div id="concentration-stats" style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-size:0.72rem;"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span> Songs per Artist Distribution</div>
+        <canvas id="songs-per-artist-canvas" width="500" height="160" style="width:100%"></canvas>
+        <div class="hist-labels" id="spa-labels"></div>
+        <div id="spa-stats" style="margin-top:12px;font-size:0.72rem;color:var(--muted)"></div>
+      </div>
+    </div>
+
+
+    </div><!-- /tab genres -->
+
+    <!-- TAB: History -->
+    <div class="stats-tab-pane" id="stats-tab-history">
+    <!-- TIMELINE -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/> <line x1="16" x2="16" y1="2" y2="6"/> <line x1="8" x2="8" y1="2" y2="6"/> <line x1="3" x2="21" y1="10" y2="10"/> <path d="M8 14h.01"/> <path d="M12 14h.01"/> <path d="M16 14h.01"/> <path d="M8 18h.01"/> <path d="M12 18h.01"/> <path d="M16 18h.01"/></svg> When You Save Songs</div>
+    <div class="panel reveal" id="timeline-panel">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/> <line x1="16" x2="16" y1="2" y2="6"/> <line x1="8" x2="8" y1="2" y2="6"/> <line x1="3" x2="21" y1="10" y2="10"/></svg></span> Songs Added Over Time</div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <!-- RELEASE YEARS -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/> <line x1="16" x2="16" y1="2" y2="6"/> <line x1="8" x2="8" y1="2" y2="6"/> <line x1="3" x2="21" y1="10" y2="10"/></svg> Release Years</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/> <line x1="16" x2="16" y1="2" y2="6"/> <line x1="8" x2="8" y1="2" y2="6"/> <line x1="3" x2="21" y1="10" y2="10"/> <path d="M8 14h.01"/> <path d="M12 14h.01"/> <path d="M16 14h.01"/> <path d="M8 18h.01"/> <path d="M12 18h.01"/> <path d="M16 18h.01"/></svg></span> Songs by Release Year</div>
+      <canvas id="year-canvas" width="1000" height="180" style="width:100%"></canvas>
+      <div class="hist-labels" id="year-labels"></div>
+    </div>
+
+    <!-- DURATION -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="10" x2="14" y1="2" y2="2"/> <line x1="12" x2="15" y1="14" y2="11"/> <circle cx="12" cy="14" r="8"/></svg> Song Duration</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="10" x2="14" y1="2" y2="2"/> <line x1="12" x2="15" y1="14" y2="11"/> <circle cx="12" cy="14" r="8"/></svg></span> Duration Distribution</div>
+        <canvas id="dur-canvas" width="420" height="140" style="width:100%"></canvas>
+        <div class="hist-labels" id="dur-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Feature Correlations</div>
+        <div id="correlations" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+
+    <!-- ═══ LISTENING HABITS ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Listening Habits</div>
+    <div class="grid-3">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Day-of-Week Saves</div>
+        <canvas id="dow-canvas" width="400" height="200" style="width:100%"></canvas>
+        <div class="hist-labels" id="dow-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Month-of-Year Saves</div>
+        <canvas id="moy-canvas" width="400" height="200" style="width:100%"></canvas>
+        <div class="hist-labels" id="moy-labels"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span> Saving Streaks</div>
+        <div id="streak-stats" style="display:flex;flex-direction:column;gap:14px;padding-top:4px"></div>
       </div>
     </div>
 
@@ -1547,6 +1661,8 @@ License: MIT
         <div id="library-glance" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
       </div>
     </div>
+
+    </div><!-- /tab history -->
 
   </div><!-- /container -->
 </div><!-- /app -->
@@ -2421,6 +2537,10 @@ function buildProfile(songs, nums, genreEntries) {
 
   const archetype = archetypes.find(a => a.condition) || archetypes[archetypes.length - 1];
   // Store archetype data globally for share/save
+  // Store avg audio stats on archetype for use in card rendering
+  archetype._avgEnergy  = avg(nums.energy);
+  archetype._avgValence = avg(nums.valence);
+  archetype._avgDance   = avg(nums.dance);
   window._archetype = archetype;
   window._allArchetypes = archetypes;
 
@@ -2877,128 +2997,235 @@ function buildArtistDiscovery(songs) {
 // ARCHETYPE SHARE / SAVE / EXPLORE
 // ═══════════════════════════════════════════════
 
+// ─────────────────────────────────────────────
+// Render the archetype badge card onto a canvas
+// Returns a Promise<HTMLCanvasElement>
+// ─────────────────────────────────────────────
+function buildArchetypeCanvas() {
+  const a = window._archetype;
+  if (!a) return Promise.resolve(null);
+
+  const W = 900, H = 500;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // ── Background gradient ──
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0,   '#0a0e0c');
+  bg.addColorStop(0.45,'#0d0d1a');
+  bg.addColorStop(1,   '#130a1a');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.roundRect(0, 0, W, H, 24); ctx.fill();
+
+  // ── Glow orb (left) ──
+  const orb1 = ctx.createRadialGradient(180, H * 0.5, 0, 180, H * 0.5, 320);
+  orb1.addColorStop(0, a.color + '28');
+  orb1.addColorStop(1, 'transparent');
+  ctx.fillStyle = orb1;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Glow orb (right) ──
+  const orb2 = ctx.createRadialGradient(W - 120, 60, 0, W - 120, 60, 220);
+  orb2.addColorStop(0, a.color + '14');
+  orb2.addColorStop(1, 'transparent');
+  ctx.fillStyle = orb2;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Noise-like grain (dots) ──
+  ctx.save();
+  for (let i = 0; i < 320; i++) {
+    const gx = Math.random() * W, gy = Math.random() * H;
+    ctx.globalAlpha = Math.random() * 0.06;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(gx, gy, Math.random() * 1.2, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  // ── Subtle grid ──
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+
+  // ── Border ──
+  ctx.strokeStyle = a.color + '55';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(1, 1, W - 2, H - 2, 24); ctx.stroke();
+
+  // ── Top accent line ──
+  const accentLine = ctx.createLinearGradient(0, 0, W, 0);
+  accentLine.addColorStop(0,   'transparent');
+  accentLine.addColorStop(0.3, a.color + 'cc');
+  accentLine.addColorStop(0.7, a.color + '88');
+  accentLine.addColorStop(1,   'transparent');
+  ctx.strokeStyle = accentLine;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(48, 0); ctx.lineTo(W - 48, 0); ctx.stroke();
+
+  // ── VELVET wordmark ──
+  ctx.font = '700 14px "DM Mono", monospace';
+  ctx.fillStyle = '#1db954';
+  ctx.letterSpacing = '0.3em';
+  ctx.fillText('VELVET', 48, 54);
+
+  // ── "Your listener archetype" label ──
+  ctx.font = '500 11px "DM Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.letterSpacing = '0.18em';
+  ctx.fillText('YOUR LISTENER ARCHETYPE', 48, 80);
+  ctx.letterSpacing = '0';
+
+  // ── Divider ──
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(48, 96); ctx.lineTo(W - 48, 96); ctx.stroke();
+
+  // ── "The" in white ──
+  ctx.font = '300 40px "Syne", sans-serif';
+  ctx.fillStyle = 'rgba(240,239,232,0.55)';
+  ctx.fillText('The', 48, 164);
+
+  // ── Archetype name (split words for big display) ──
+  const nameParts = a.name.replace(/^The\s+/, '').split(' ');
+  ctx.font = '800 68px "Syne", sans-serif';
+  ctx.fillStyle = a.color;
+  // If two words, stack them
+  if (nameParts.length >= 2) {
+    ctx.fillText(nameParts[0], 48, 240);
+    ctx.fillStyle = 'rgba(240,239,232,0.9)';
+    ctx.fillText(nameParts.slice(1).join(' '), 48, 316);
+  } else {
+    ctx.fillText(nameParts[0], 48, 280);
+  }
+
+  // ── Trait chips ──
+  ctx.font = '500 11px "DM Mono", monospace';
+  let tx = 48;
+  const traitY = H - 70;
+  (a.traits || []).forEach(trait => {
+    const tw = ctx.measureText(trait).width + 22;
+    // chip bg
+    ctx.fillStyle = a.color + '22';
+    ctx.beginPath(); ctx.roundRect(tx, traitY, tw, 24, 12); ctx.fill();
+    // chip border
+    ctx.strokeStyle = a.color + '66';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(tx, traitY, tw, 24, 12); ctx.stroke();
+    // chip text
+    ctx.fillStyle = a.color;
+    ctx.fillText(trait, tx + 11, traitY + 16);
+    tx += tw + 8;
+    if (tx > W - 200) return; // avoid overflow
+  });
+
+  // ── Description (right side) ──
+  const descX = 520, descW = W - descX - 48;
+  ctx.font = '400 14px "DM Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  const words = a.desc.split(' ');
+  let line = '', dy = 130;
+  words.forEach(word => {
+    const test = line + (line ? ' ' : '') + word;
+    if (ctx.measureText(test).width > descW && line) {
+      if (dy < H - 100) { ctx.fillText(line, descX, dy); dy += 22; }
+      line = word;
+    } else { line = test; }
+  });
+  if (dy < H - 100) ctx.fillText(line, descX, dy);
+
+  // ── Stats mini-panel ──
+  const statsY = Math.min(dy + 28, H - 140);
+  const statsData = [
+    { label: 'ENERGY',  val: window._archetype._avgEnergy  ? (window._archetype._avgEnergy * 100).toFixed(0)  + '%' : '—' },
+    { label: 'VIBE',    val: window._archetype._avgValence ? (window._archetype._avgValence * 100).toFixed(0) + '%' : '—' },
+    { label: 'DANCE',   val: window._archetype._avgDance   ? (window._archetype._avgDance * 100).toFixed(0)   + '%' : '—' },
+  ];
+  ctx.font = '700 10px "DM Mono", monospace';
+  let sx = descX;
+  statsData.forEach(s => {
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.beginPath(); ctx.roundRect(sx, statsY, 90, 46, 8); ctx.fill();
+    ctx.fillStyle = a.color;
+    ctx.font = '700 16px "Syne", sans-serif';
+    ctx.fillText(s.val, sx + 10, statsY + 26);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '500 9px "DM Mono", monospace';
+    ctx.fillText(s.label, sx + 10, statsY + 40);
+    sx += 100;
+  });
+
+  // ── Bottom-right watermark ──
+  ctx.font = '400 11px "DM Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.textAlign = 'right';
+  ctx.fillText('velvet · know your sound', W - 48, H - 28);
+  ctx.textAlign = 'left';
+
+  return Promise.resolve(canvas);
+}
+
+// ─────────────────────────────────────────────
+// Share: render card → share as PNG image file
+// Falls back to clipboard copy on unsupported browsers
+// ─────────────────────────────────────────────
 function shareArchetype() {
   const a = window._archetype;
   if (!a) return;
-  const title = 'VELVET — My Listener Archetype';
-  const text  = `I'm "${a.name}" on VELVET — ${a.desc.slice(0, 120)}...`;
-  const url   = window.location.href.split('?')[0].split('#')[0];
 
-  // Use native share sheet if available (mobile + modern desktop)
-  if (navigator.share) {
-    navigator.share({ title, text, url }).catch(() => {});
-    return;
-  }
+  buildArchetypeCanvas().then(canvas => {
+    if (!canvas) return;
 
-  // Desktop fallback: copy to clipboard + show toast
-  const full = text + '\n\n' + url;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(full).then(() => showToast('Link copied!'));
-  } else {
-    const ta = document.createElement('textarea');
-    ta.value = full; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('Copied to clipboard!');
-  }
+    const title = 'VELVET — ' + a.name;
+    const text  = 'My music archetype is "' + a.name + '" on VELVET — Know Your Sound';
+
+    // Convert canvas to blob for sharing
+    canvas.toBlob(blob => {
+      const file = new File([blob], 'velvet-archetype.png', { type: 'image/png' });
+
+      // Check if browser supports sharing files
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          title,
+          text,
+          files: [file],
+        }).catch(err => {
+          // User cancelled or error — silently ignore
+          if (err.name !== 'AbortError') console.warn('Share failed:', err);
+        });
+        return;
+      }
+
+      // Fallback 1: share without file (text only)
+      if (navigator.share) {
+        navigator.share({ title, text }).catch(() => {});
+        return;
+      }
+
+      // Fallback 2: download the image + copy text
+      const url = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = 'velvet-archetype.png';
+      link.href = url; link.click();
+      showToast('Image downloaded!');
+    }, 'image/png');
+  });
 }
 
-function showToast(msg) {
-  const t = document.getElementById('share-toast');
-  const msgEl = t.querySelector('span');
-  if (msgEl && msg) msgEl.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
+// ─────────────────────────────────────────────
+// Save Card: just download the PNG
+// ─────────────────────────────────────────────
 function saveArchetypeCard() {
-  const a = window._archetype;
-  if (!a) return;
-
-  // Build a canvas card
-  const canvas = document.createElement('canvas');
-  canvas.width = 800; canvas.height = 440;
-  const ctx = canvas.getContext('2d');
-
-  // Background
-  const bg = ctx.createLinearGradient(0, 0, 800, 440);
-  bg.addColorStop(0, '#0d1a12');
-  bg.addColorStop(0.5, '#0f0f1f');
-  bg.addColorStop(1, '#1a0d1f');
-  ctx.fillStyle = bg;
-  ctx.roundRect(0, 0, 800, 440, 20);
-  ctx.fill();
-
-  // Glow blobs
-  const glow1 = ctx.createRadialGradient(160, 220, 0, 160, 220, 300);
-  glow1.addColorStop(0, a.color + '22');
-  glow1.addColorStop(1, 'transparent');
-  ctx.fillStyle = glow1;
-  ctx.fillRect(0, 0, 800, 440);
-
-  // Border
-  ctx.strokeStyle = a.color + '44';
-  ctx.lineWidth = 1.5;
-  ctx.roundRect(1, 1, 798, 438, 20);
-  ctx.stroke();
-
-  // VELVET wordmark
-  ctx.font = 'bold 13px monospace';
-  ctx.fillStyle = '#1db954';
-  ctx.letterSpacing = '0.2em';
-  ctx.fillText('VELVET', 44, 52);
-
-  // Archetype label
-  ctx.font = '11px monospace';
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.fillText('YOUR LISTENER ARCHETYPE', 44, 100);
-
-  // Archetype name
-  ctx.font = 'bold 52px sans-serif';
-  ctx.fillStyle = '#f0efe8';
-  const nameParts = a.name.replace('The ', '').split(' ');
-  ctx.fillText('The', 44, 158);
-  ctx.fillStyle = a.color;
-  ctx.fillText(nameParts.slice(0).join(' '), 44, 218);
-
-  // Description
-  ctx.font = '15px monospace';
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  const words = a.desc.split(' ');
-  let line = '', y = 278, maxW = 500;
-  words.forEach(word => {
-    const test = line + word + ' ';
-    if (ctx.measureText(test).width > maxW && line) {
-      ctx.fillText(line.trim(), 44, y);
-      line = word + ' '; y += 22;
-    } else { line = test; }
-    if (y > 360) return;
+  buildArchetypeCanvas().then(canvas => {
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = 'velvet-archetype.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Card saved!');
   });
-  if (y <= 360) ctx.fillText(line.trim(), 44, y);
-
-  // Traits
-  ctx.font = '11px monospace';
-  let tx = 44;
-  (a.traits || []).forEach(trait => {
-    ctx.fillStyle = a.color + '33';
-    const w = ctx.measureText(trait).width + 20;
-    ctx.beginPath();
-    ctx.roundRect(tx, 395, w, 22, 11);
-    ctx.fill();
-    ctx.strokeStyle = a.color + '55';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = a.color;
-    ctx.fillText(trait, tx + 10, 410);
-    tx += w + 8;
-  });
-
-  // Download
-  const link = document.createElement('a');
-  link.download = 'velvet-archetype.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
 }
 
 function openArchetypeExplorer() {
@@ -3784,6 +4011,28 @@ buildAll = function() {
 
   requestAnimationFrame(draw);
 })();
+
+
+
+// ── STATS TABS ──
+function switchStatsTab(tabId) {
+  document.querySelectorAll('.stats-tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.stats-tab-btn').forEach(b => b.classList.remove('active'));
+  const pane = document.getElementById('stats-tab-' + tabId);
+  if (pane) pane.classList.add('active');
+  const btn = document.querySelector('.stats-tab-btn[data-tab="' + tabId + '"]');
+  if (btn) btn.classList.add('active');
+  // Re-trigger reveal animations for newly shown elements
+  if (typeof observer !== 'undefined') {
+    pane.querySelectorAll('.reveal').forEach(el => {
+      el.classList.remove('visible');
+      observer.observe(el);
+    });
+  }
+  // Scroll to top of tab area
+  const nav = document.getElementById('stats-tabs-nav');
+  if (nav) nav.scrollIntoView({behavior:'smooth', block:'start'});
+}
 
 </script>
 </body>
