@@ -467,6 +467,100 @@ License: MIT
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+
+  /* ── SPOTIFY CONNECT ── */
+  .upload-screen-inner {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 28px;
+    width: 100%; max-width: 480px;
+  }
+
+  .connect-divider {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; color: var(--muted); font-size: 0.7rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .connect-divider::before, .connect-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .spotify-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 14px 24px;
+    background: #1db954; color: #000;
+    border: none; border-radius: 99px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.04em; cursor: pointer;
+    transition: all 0.2s; text-decoration: none;
+  }
+  .spotify-btn:hover { background: #1ed760; transform: scale(1.02); }
+  .spotify-btn:active { transform: scale(0.98); }
+
+  .spotify-btn svg { flex-shrink: 0; }
+
+  .spotify-setup-box {
+    width: 100%;
+    background: rgba(29,185,84,0.04);
+    border: 1px solid rgba(29,185,84,0.15);
+    border-radius: 14px;
+    padding: 20px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .spotify-setup-box.visible { display: flex; }
+
+  .setup-label {
+    font-size: 0.68rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 2px;
+  }
+  .setup-input {
+    width: 100%; background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 0.8rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .setup-input:focus { border-color: var(--accent); }
+  .setup-input::placeholder { color: var(--muted); }
+
+  .setup-help {
+    font-size: 0.65rem; color: var(--muted); line-height: 1.6;
+  }
+  .setup-help a { color: var(--accent); text-decoration: none; }
+  .setup-help a:hover { text-decoration: underline; }
+
+  .spotify-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.75rem; color: var(--muted);
+    padding: 8px 0;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted); flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-dot.loading { background: #facc15; animation: blink 1s infinite; }
+  .status-dot.success { background: #1db954; }
+  .status-dot.error   { background: #f87171; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .progress-bar-wrap {
+    width: 100%; height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px; overflow: hidden;
+    display: none;
+  }
+  .progress-bar-wrap.visible { display: block; }
+  .progress-bar-fill {
+    height: 100%; background: var(--accent);
+    border-radius: 2px; width: 0%;
+    transition: width 0.3s ease;
+  }
+
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
@@ -845,16 +939,53 @@ License: MIT
 
 <!-- Upload Screen -->
 <div id="upload-screen">
-  <div class="upload-logo">VELVET</div>
-  <div class="upload-sub">Know Your Sound</div>
-  <div class="drop-zone" id="drop-zone">
-    <div class="drop-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/> <circle cx="6" cy="18" r="3"/> <circle cx="18" cy="16" r="3"/></svg></div>
-    <div class="drop-text">Drop your Liked_Songs.csv here</div>
-    <div class="drop-sub" style="margin-top:8px">or click to browse</div>
-    <input type="file" id="file-input" accept=".csv">
-  </div>
-  <div style="color:var(--muted); font-size:0.7rem; text-align:center; max-width:380px; line-height:1.6">
-    Export from <strong style="color:var(--text)">Exportify / SpotiDate / Watsonbox</strong> — the CSV must include audio features columns (Danceability, Energy, Valence, etc.)
+  <div class="upload-screen-inner">
+    <div class="upload-logo">VELVET</div>
+    <div class="upload-sub">Know Your Sound</div>
+
+    <!-- Spotify Direct Connect -->
+    <button class="spotify-btn" id="spotify-connect-btn" onclick="startSpotifyAuth()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+      Sign in with Spotify
+    </button>
+
+    <!-- One-time setup note -->
+    <div id="spotify-setup-note" style="width:100%;background:rgba(29,185,84,0.04);border:1px solid rgba(29,185,84,0.15);border-radius:12px;padding:16px;display:none;flex-direction:column;gap:10px;">
+      <div style="font-size:0.72rem;color:#f0efe8;font-weight:600;">One-time setup (2 min)</div>
+      <div style="font-size:0.65rem;color:#6b6b7a;line-height:1.7;">
+        1. Go to <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:#1db954;">developer.spotify.com/dashboard</a> → Create app<br>
+        2. Add Redirect URI: <code id="redirect-uri-show" style="color:#38bdf8;font-size:0.62rem;">loading…</code><br>
+        3. Copy your Client ID and paste below
+      </div>
+      <input class="setup-input" id="spotify-client-id" type="text" placeholder="Paste Client ID…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:9px 12px;color:#f0efe8;font-family:inherit;font-size:0.78rem;outline:none;" />
+      <button class="spotify-btn" onclick="saveClientIdAndAuth()" style="margin-top:2px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        Connect &amp; Import
+      </button>
+    </div>
+
+    <!-- Status / progress (shown during import) -->
+    <div class="spotify-status" id="spotify-status" style="display:none">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Connecting…</span>
+    </div>
+    <div class="progress-bar-wrap" id="progress-wrap">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+
+    <div class="connect-divider">or import CSV</div>
+
+    <!-- CSV Upload -->
+    <div class="drop-zone" id="drop-zone" style="width:100%">
+      <div class="drop-icon"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/> <circle cx="6" cy="18" r="3"/> <circle cx="18" cy="16" r="3"/></svg></div>
+      <div class="drop-text">Drop your Liked_Songs.csv here</div>
+      <div class="drop-sub" style="margin-top:6px">or click to browse</div>
+      <input type="file" id="file-input" accept=".csv">
+    </div>
+    <div style="color:var(--muted); font-size:0.65rem; text-align:center; line-height:1.6">
+      Export CSV from <a href="https://exportify.net" target="_blank" style="color:var(--accent)">Exportify</a> or
+      <a href="https://watsonbox.github.io/exportify/" target="_blank" style="color:var(--accent)">Watsonbox</a>
+    </div>
   </div>
 </div>
 
@@ -1232,6 +1363,273 @@ License: MIT
 // ── DATA STORE ──
 let songs = [];
 
+// ═══════════════════════════════════════════════
+// SPOTIFY OAUTH — PKCE popup flow
+// ═══════════════════════════════════════════════
+// HOW IT WORKS:
+//   • We use a hardcoded Client ID registered with redirect URI
+//     pointing to a tiny hosted callback page (velvet-callback.netlify.app)
+//   • That page reads the auth code from the URL and postMessages it back
+//   • We exchange the code for a token entirely client-side (PKCE)
+//   • Zero backend, zero setup for the user — just click Sign in
+// ─────────────────────────────────────────────
+// To self-host: register your own Spotify app at
+//   developer.spotify.com/dashboard
+// Add redirect URI: https://YOUR-DOMAIN/callback.html
+// Then update CLIENT_ID and REDIRECT_URI below.
+// ═══════════════════════════════════════════════
+
+const SPOTIFY_CLIENT_ID  = 'YOUR_CLIENT_ID_HERE';
+// Hosted callback page that postMessages the code back to this window
+const SPOTIFY_REDIRECT   = 'https://velvet-callback.netlify.app/';
+const SPOTIFY_SCOPES     = 'user-library-read';
+
+// PKCE helpers
+async function generateCodeChallenge(verifier) {
+  const enc = new TextEncoder().encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', enc);
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+function randomString(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, v => chars[v % chars.length]).join('');
+}
+
+function saveClientIdAndAuth() {
+  const id = document.getElementById('spotify-client-id').value.trim();
+  if (!id) return;
+  localStorage.setItem('velvet_client_id', id);
+  document.getElementById('spotify-setup-note').style.display = 'none';
+  startSpotifyAuth(id);
+}
+
+async function startSpotifyAuth(clientIdOverride) {
+  // Try saved client ID first, then the hardcoded one
+  const savedId  = clientIdOverride || localStorage.getItem('velvet_client_id') || SPOTIFY_CLIENT_ID;
+  const isPlaceholder = savedId === 'YOUR_CLIENT_ID_HERE';
+
+  if (isPlaceholder) {
+    // Show setup panel so user can enter their own ID
+    const note = document.getElementById('spotify-setup-note');
+    const uri  = document.getElementById('redirect-uri-show');
+    note.style.display = 'flex';
+    if (uri) uri.textContent = window.location.href.split('?')[0].split('#')[0];
+    return;
+  }
+
+  const verifier  = randomString(64);
+  const challenge = await generateCodeChallenge(verifier);
+  const state     = randomString(16);
+
+  sessionStorage.setItem('pkce_verifier', verifier);
+  sessionStorage.setItem('pkce_state',    state);
+
+  const authUrl = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
+    response_type:         'code',
+    client_id:             savedId,
+    scope:                 SPOTIFY_SCOPES,
+    redirect_uri:          SPOTIFY_REDIRECT,
+    code_challenge_method: 'S256',
+    code_challenge:        challenge,
+    state:                 state,
+  });
+
+  // Open Spotify login in a popup
+  const popup = window.open(authUrl, 'spotify-auth',
+    'width=480,height=700,left=' + ((screen.width-480)/2) +
+    ',top=' + ((screen.height-700)/2));
+
+  if (!popup) {
+    // Popup blocked — fall back to redirect
+    sessionStorage.setItem('pkce_verifier', verifier);
+    sessionStorage.setItem('pkce_state', state);
+    window.location.href = authUrl.replace(
+      SPOTIFY_REDIRECT,
+      window.location.href.split('?')[0].split('#')[0]
+    );
+    return;
+  }
+
+  showStatus('loading', 'Waiting for Spotify login…');
+
+  // Listen for the code postMessaged back from the callback page
+  window.addEventListener('message', async function handler(e) {
+    if (!e.data || e.data.type !== 'spotify_callback') return;
+    window.removeEventListener('message', handler);
+    popup.close();
+
+    if (e.data.error) {
+      showStatus('error', 'Spotify denied access: ' + e.data.error);
+      return;
+    }
+    if (e.data.state !== state) {
+      showStatus('error', 'State mismatch — possible CSRF. Try again.');
+      return;
+    }
+
+    await exchangeAndFetch(e.data.code);
+  });
+
+  // Fallback: if popup is closed manually
+  const closed = setInterval(() => {
+    if (popup.closed) {
+      clearInterval(closed);
+      const st = document.getElementById('status-text');
+      if (st && st.textContent.includes('Waiting')) {
+        showStatus('error', 'Login window closed. Try again.');
+      }
+    }
+  }, 800);
+}
+
+// Handle same-page redirect fallback (when popup is blocked)
+async function handleSpotifyCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code   = params.get('code');
+  const state  = params.get('state');
+  if (!code) return;
+
+  window.history.replaceState({}, '', window.location.pathname);
+  showStatus('loading', 'Completing sign-in…');
+  document.getElementById('upload-screen').style.display = 'flex';
+
+  const savedState = sessionStorage.getItem('pkce_state');
+  if (savedState && state !== savedState) {
+    showStatus('error', 'State mismatch. Try again.');
+    return;
+  }
+
+  await exchangeAndFetch(code);
+}
+
+async function exchangeAndFetch(code) {
+  const verifier = sessionStorage.getItem('pkce_verifier');
+  showStatus('loading', 'Signing in…');
+
+  try {
+    const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type:    'authorization_code',
+        code,
+        redirect_uri:  SPOTIFY_REDIRECT,
+        client_id:     SPOTIFY_CLIENT_ID,
+        code_verifier: verifier,
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      const err = await tokenRes.json().catch(() => ({}));
+      throw new Error(err.error_description || ('HTTP ' + tokenRes.status));
+    }
+
+    const { access_token } = await tokenRes.json();
+    await fetchSpotifyLibrary(access_token);
+
+  } catch (e) {
+    showStatus('error', 'Error: ' + e.message);
+  }
+}
+
+
+async function fetchSpotifyLibrary(token) {
+  showStatus('loading', 'Fetching your liked songs…');
+  showProgress(0);
+
+  const allTracks = [];
+  let url = 'https://api.spotify.com/v1/me/tracks?limit=50&offset=0';
+
+  // Step 1: fetch all saved tracks (paginated)
+  while (url) {
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('API error: ' + res.status);
+    const data = await res.json();
+    allTracks.push(...data.items);
+    url = data.next;
+    const pct = Math.min(50, (allTracks.length / (data.total || 1)) * 50);
+    showStatus('loading', 'Fetching tracks… ' + allTracks.length + ' / ' + data.total);
+    showProgress(pct);
+  }
+
+  showStatus('loading', 'Fetching audio features…');
+
+  // Step 2: fetch audio features in batches of 100
+  const features = {};
+  const ids = allTracks.map(i => i.track.id).filter(Boolean);
+  for (let i = 0; i < ids.length; i += 100) {
+    const batch = ids.slice(i, i + 100);
+    const res = await fetch(
+      'https://api.spotify.com/v1/audio-features?ids=' + batch.join(','),
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    if (!res.ok) throw new Error('Audio features error: ' + res.status);
+    const data = await res.json();
+    (data.audio_features || []).forEach(f => { if (f) features[f.id] = f; });
+    const pct = 50 + ((i + batch.length) / ids.length) * 50;
+    showProgress(pct);
+  }
+
+  // Step 3: Build songs array matching CSV format
+  songs = allTracks.map(item => {
+    const t = item.track;
+    const f = features[t.id] || {};
+    return {
+      'Track URI':        'spotify:track:' + t.id,
+      'Track Name':       t.name,
+      'Album Name':       t.album.name,
+      'Artist Name(s)':   t.artists.map(a => a.name).join(';'),
+      'Release Date':     t.album.release_date || '',
+      'Duration (ms)':    String(t.duration_ms),
+      'Popularity':       String(t.popularity),
+      'Explicit':         String(t.explicit),
+      'Added At':         item.added_at,
+      'Genres':           '',
+      'Record Label':     '',
+      'Danceability':     String(f.danceability ?? ''),
+      'Energy':           String(f.energy ?? ''),
+      'Key':              String(f.key ?? ''),
+      'Loudness':         String(f.loudness ?? ''),
+      'Mode':             String(f.mode ?? ''),
+      'Speechiness':      String(f.speechiness ?? ''),
+      'Acousticness':     String(f.acousticness ?? ''),
+      'Instrumentalness': String(f.instrumentalness ?? ''),
+      'Liveness':         String(f.liveness ?? ''),
+      'Valence':          String(f.valence ?? ''),
+      'Tempo':            String(f.tempo ?? ''),
+      'Time Signature':   String(f.time_signature ?? ''),
+    };
+  });
+
+  showStatus('success', songs.length + ' songs imported! Loading…');
+  showProgress(100);
+
+  setTimeout(() => {
+    launch();
+  }, 600);
+}
+
+function showStatus(type, msg) {
+  const el   = document.getElementById('spotify-status');
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  if (!el) return;
+  el.style.display = 'flex';
+  dot.className = 'status-dot ' + type;
+  text.textContent = msg;
+  const wrap = document.getElementById('progress-wrap');
+  if (wrap) wrap.classList.add('visible');
+}
+
+function showProgress(pct) {
+  const fill = document.getElementById('progress-fill');
+  if (fill) fill.style.width = pct + '%';
+}
+
+
 
 
 
@@ -1272,6 +1670,11 @@ function processFile(file) {
     }
   });
 }
+
+// Check for Spotify OAuth callback on page load
+document.addEventListener('DOMContentLoaded', () => {
+  handleSpotifyCallback();
+});
 
 function launch() {
   document.getElementById('upload-screen').style.display = 'none';
@@ -2545,21 +2948,34 @@ function buildArtistDiscovery(songs) {
 function shareArchetype() {
   const a = window._archetype;
   if (!a) return;
-  const text = `My music archetype on VELVET: "${a.name}" — ${a.desc.slice(0, 100)}... Discover yours!`;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => showToast());
+  const title = 'VELVET — My Listener Archetype';
+  const text  = `I'm "${a.name}" on VELVET — ${a.desc.slice(0, 120)}...`;
+  const url   = window.location.href.split('?')[0].split('#')[0];
+
+  // Use native share sheet if available (mobile + modern desktop)
+  if (navigator.share) {
+    navigator.share({ title, text, url }).catch(() => {});
+    return;
+  }
+
+  // Desktop fallback: copy to clipboard + show toast
+  const full = text + '\n\n' + url;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(full).then(() => showToast('Link copied!'));
   } else {
     const ta = document.createElement('textarea');
-    ta.value = text;
+    ta.value = full; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select(); document.execCommand('copy');
     document.body.removeChild(ta);
-    showToast();
+    showToast('Copied to clipboard!');
   }
 }
 
-function showToast() {
+function showToast(msg) {
   const t = document.getElementById('share-toast');
+  const msgEl = t.querySelector('span');
+  if (msgEl && msg) msgEl.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
