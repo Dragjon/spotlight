@@ -1557,8 +1557,31 @@ License: MIT
       transition: transform 0.1s;
     }
 
-    /* ── REVEAL ANIMATION — faster on mobile ── */
-    .reveal {
+    /* ── AVERAGE PROFILE feature bars ── */
+    .feature-bar { width: 100%; overflow: hidden; }
+    .feat-row { width: 100%; min-width: 0; }
+    .feat-header { width: 100%; min-width: 0; }
+    .feat-name {
+      font-size: 0.62rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 55%;
+    }
+    .feat-track { width: 100%; min-width: 0; }
+
+    /* ── RADAR — ensure no overflow ── */
+    .radar-wrap {
+      width: 100%;
+      overflow: hidden;
+      padding: 4px 0;
+    }
+    #radar-canvas {
+      max-width: 100% !important;
+      height: auto !important;
+      display: block;
+      margin: 0 auto;
+    }
       transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1),
                   transform 0.5s cubic-bezier(0.16,1,0.3,1);
     }
@@ -1874,8 +1897,8 @@ License: MIT
       </div>
       <div class="panel reveal">
         <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/> <line x1="22" x2="18" y1="12" y2="12"/> <line x1="6" x2="2" y1="12" y2="12"/> <line x1="12" x2="12" y1="6" y2="2"/> <line x1="12" x2="12" y1="22" y2="18"/></svg></span> Feature Radar</div>
-        <div class="radar-wrap">
-          <canvas id="radar-canvas" width="380" height="300"></canvas>
+        <div class="radar-wrap" style="width:100%;overflow:hidden;">
+          <canvas id="radar-canvas" style="width:100%;max-width:380px;height:auto;display:block;margin:0 auto;"></canvas>
         </div>
       </div>
     </div>
@@ -2336,14 +2359,17 @@ function buildAll() {
   buildAudioFeatures(nums);
 
   // RADAR
-  drawRadar('radar-canvas', {
+  const _radarData = {
     Danceability: avg(nums.dance),
     Energy: avg(nums.energy),
     Valence: avg(nums.valence),
     Acousticness: avg(nums.acoustic),
     Speechiness: avg(nums.speech) * 5,
     Liveness: avg(nums.liveness) * 3,
-  });
+  };
+  drawRadar('radar-canvas', _radarData);
+  // Redraw on resize so it stays responsive
+  window._radarData = _radarData;
 
   // MOOD CANVAS
   drawMoodMap(songs);
@@ -2554,6 +2580,11 @@ function buildAudioFeatures(nums) {
 // ── RADAR ──
 function drawRadar(id, data) {
   const canvas = document.getElementById(id);
+  // Size canvas to its container, keeping aspect ratio
+  const containerW = canvas.parentElement.clientWidth || 300;
+  const size = Math.min(containerW, 380);
+  canvas.width  = size;
+  canvas.height = Math.round(size * (300/380));
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const cx = W/2, cy = H/2;
@@ -2660,18 +2691,20 @@ function drawRadar(id, data) {
   }
 
   // Labels
+  const labelFontSize = Math.max(8, Math.round(W * 0.029));
+  const valFontSize   = Math.max(7, Math.round(W * 0.026));
   ctx.fillStyle = 'rgba(240,239,232,0.75)';
-  ctx.font = '11px "DM Mono", monospace';
+  ctx.font = `${labelFontSize}px "DM Mono", monospace`;
   ctx.textAlign = 'center';
   for (let i = 0; i < N; i++) {
     const a = i * angleStep - Math.PI/2;
     const x = cx + Math.cos(a)*(r+26), y = cy + Math.sin(a)*(r+26) + 4;
     // value badge
     ctx.fillStyle = COLORS.green + 'cc';
-    ctx.font = 'bold 10px "DM Mono", monospace';
+    ctx.font = `bold ${valFontSize}px "DM Mono", monospace`;
     ctx.fillText((vals[i]*100).toFixed(0)+'%', x, y + 14);
     ctx.fillStyle = 'rgba(240,239,232,0.75)';
-    ctx.font = '11px "DM Mono", monospace';
+    ctx.font = `${labelFontSize}px "DM Mono", monospace`;
     ctx.fillText(keys[i], x, y);
   }
 }
@@ -5186,6 +5219,10 @@ function switchStatsTab(tabId) {
 
   // Handle resize
   window.addEventListener('resize', initMobileNav);
+  // Redraw radar on resize so it stays within bounds
+  window.addEventListener('resize', function() {
+    if (window._radarData) drawRadar('radar-canvas', window._radarData);
+  });
   document.addEventListener('DOMContentLoaded', initMobileNav);
 })();
 </script>
