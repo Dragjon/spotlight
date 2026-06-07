@@ -1985,7 +1985,7 @@ License: MIT
     /* ── RADAR — ensure no overflow ── */
     .radar-wrap {
       width: 100%;
-      overflow: hidden;
+      overflow: visible;
       padding: 4px 0;
     }
     #radar-canvas {
@@ -3678,12 +3678,13 @@ function drawRadar(id, data) {
   // Size canvas to its container, keeping aspect ratio
   const containerW = canvas.parentElement.clientWidth || 300;
   const size = Math.min(containerW, 380);
+  const labelPad = 44; // extra vertical room for top/bottom labels
   canvas.width  = size;
-  canvas.height = Math.round(size * (300/380));
+  canvas.height = Math.round(size * (300/380)) + labelPad;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const cx = W/2, cy = H/2;
-  const r = Math.min(W,H)*0.38;
+  const r = Math.min(W, H - labelPad)*0.38;
   const keys = Object.keys(data);
   const vals = Object.values(data);
   const N = keys.length;
