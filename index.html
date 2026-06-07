@@ -1,3 +1,9 @@
+<?php
+// index.php — SpotLight
+// Serves the app. The art/preview fetching happens client-side via iTunes CORS API.
+// spotify-proxy.php is used as a fallback for art and for preview URLs.
+header('Content-Type: text/html; charset=utf-8');
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +13,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>SpotLight - Know Your Sound</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzFkYjk1NCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjU1JSIgc3RvcC1jb2xvcj0iIzM4YmRmOCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNhODU1ZjciLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE0IiBmaWxsPSIjMGEwYTBmIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIzMiw4IDYsNTYgNTgsNTYiIGZpbGw9InVybCgjZykiIG9wYWNpdHk9IjAuMTgiLz4KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjE0IiByPSI3IiBmaWxsPSJ1cmwoI2cpIiBvcGFjaXR5PSIwLjkiLz4KICA8cmVjdCB4PSIxNiIgeT0iMzgiIHdpZHRoPSI1IiBoZWlnaHQ9IjE0IiByeD0iMiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC41NSIvPgogIDxyZWN0IHg9IjI0IiB5PSIzMCIgd2lkdGg9IjUiIGhlaWdodD0iMjIiIHJ4PSIyIiBmaWxsPSJ1cmwoI2cpIiBvcGFjaXR5PSIwLjc1Ii8+CiAgPHJlY3QgeD0iMzAiIHk9IjIyIiB3aWR0aD0iNSIgaGVpZ2h0PSIzMCIgcng9IjIiIGZpbGw9InVybCgjZykiIG9wYWNpdHk9IjEuMCIvPgogIDxyZWN0IHg9IjM4IiB5PSIzMCIgd2lkdGg9IjUiIGhlaWdodD0iMjIiIHJ4PSIyIiBmaWxsPSJ1cmwoI2cpIiBvcGFjaXR5PSIwLjc1Ii8+CiAgPHJlY3QgeD0iNDYiIHk9IjM4IiB3aWR0aD0iNSIgaGVpZ2h0PSIxNCIgcng9IjIiIGZpbGw9InVybCgjZykiIG9wYWNpdHk9IjAuNTUiLz4KPC9zdmc+">
+<link rel="shortcut icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzFkYjk1NCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjU1JSIgc3RvcC1jb2xvcj0iIzM4YmRmOCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNhODU1ZjciLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE0IiBmaWxsPSIjMGEwYTBmIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIzMiw4IDYsNTYgNTgsNTYiIGZpbGw9InVybCgjZykiIG9wYWNpdHk9IjAuMTgiLz4KICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjE0IiByPSI3IiBmaWxsPSJ1cmwoI2cpIiBvcGFjaXR5PSIwLjkiLz4KICA8cmVjdCB4PSIxNiIgeT0iMzgiIHdpZHRoPSI1IiBoZWlnaHQ9IjE0IiByeD0iMiIgZmlsbD0idXJsKCNnKSIgb3BhY2l0eT0iMC41NSIvPgogIDxyZWN0IHg9IjI0IiB5PSIzMCIgd2lkdGg9IjUiIGhlaWdodD0iMjIiIHJ4PSIyIiBmaWxsPSJ1cmwoI2cpIiBvcGFjaXR5PSIwLjc1Ii8+CiAgPHJlY3QgeD0iMzAiIHk9IjIyIiB3aWR0aD0iNSIgaGVpZ2h0PSIzMCIgcng9IjIiIGZpbGw9InVybCgjZykiIG9wYWNpdHk9IjEuMCIvPgogIDxyZWN0IHg9IjM4IiB5PSIzMCIgd2lkdGg9IjUiIGhlaWdodD0iMjIiIHJ4PSIyIiBmaWxsPSJ1cmwoI2cpIiBvcGFjaXR5PSIwLjc1Ii8+CiAgPHJlY3QgeD0iNDYiIHk9IjM4IiB3aWR0aD0iNSIgaGVpZ2h0PSIxNCIgcng9IjIiIGZpbGw9InVybCgjZykiIG9wYWNpdHk9IjAuNTUiLz4KPC9zdmc+">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script>/* @license
 Papa Parse
@@ -86,20 +94,10 @@ License: MIT
   }
 
   .upload-logo {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(3rem, 8vw, 6rem);
-    font-weight: 800;
-    letter-spacing: -0.05em;
     line-height: 1.1;
-    padding: 4px 2px;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent4) 60%, var(--accent3) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    animation: logoGlow 3s ease-in-out infinite alternate;
     display: block;
     overflow: visible;
+    animation: logoGlow 3s ease-in-out infinite alternate;
   }
 
   @keyframes logoGlow {
@@ -380,6 +378,7 @@ License: MIT
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 32px; }
   .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 32px; }
   .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px; }
+  .grid-2 > *, .grid-3 > *, .grid-1-2 > *, .grid-2-1 > * { min-width: 0; }
 
   @media (max-width: 900px) {
     .grid-2, .grid-3, .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
@@ -396,6 +395,7 @@ License: MIT
     position: relative;
     transition: border-color 0.3s, box-shadow 0.3s;
     backdrop-filter: blur(2px);
+    min-width: 0;
   }
 
   .panel:hover {
@@ -417,14 +417,20 @@ License: MIT
 
   .bar-row {
     display: grid;
-    grid-template-columns: 130px 1fr 50px;
+    grid-template-columns: minmax(0, 130px) 1fr minmax(0, 50px);
     gap: 10px; align-items: center;
     font-size: 0.72rem;
+    min-width: 0; /* prevent grid blowout */
+    overflow: hidden;
   }
 
-  .bar-label { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label {
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0; /* essential for text-overflow in grid */
+  }
 
-  .bar-track { background: rgba(255,255,255,0.05); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-track { background: rgba(255,255,255,0.05); border-radius: 4px; height: 8px; overflow: hidden; min-width: 0; }
 
   .bar-fill {
     height: 100%; border-radius: 4px;
@@ -434,6 +440,8 @@ License: MIT
   }
 
   .bar-count { color: var(--muted); text-align: right; font-size: 0.7rem; }
+
+  .bar-chart { overflow: hidden; width: 100%; }
 
   /* ── HORIZONTAL BAR (for audio features) ── */
   .feature-bar {
@@ -487,35 +495,355 @@ License: MIT
   .tl-count { color: var(--muted); text-align: right; }
 
   /* ── TOP TRACKS TABLE ── */
-  .track-list { display: flex; flex-direction: column; gap: 1px; }
+  /* ══ TRACK LIST ══ */
+  /* ── TRACK LIST ── */
+  .track-list { display: flex; flex-direction: column; }
 
-  .track-item {
+  .track-row {
     display: grid;
-    grid-template-columns: 28px 1fr 60px 60px;
-    gap: 12px; align-items: center;
-    padding: 10px 12px;
+    grid-template-columns: 28px 40px minmax(0,1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
     border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
     transition: background 0.15s;
-    font-size: 0.78rem;
+    position: relative;
+  }
+  .track-row:hover { background: rgba(255,255,255,0.05); }
+  .track-row.is-playing { background: rgba(29,185,84,0.08); }
+
+  /* number / playing indicator */
+  .track-num {
+    width: 28px; text-align: right;
+    font-size: 0.68rem; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    /* hosts either the number text or the bars icon — fixed size so no reflow */
+    display: flex; align-items: center; justify-content: flex-end;
+  }
+  .track-num svg { flex-shrink: 0; }
+
+  /* album art */
+  .track-thumb {
+    width: 40px; height: 40px; border-radius: 6px;
+    object-fit: cover; display: block; flex-shrink: 0;
+    background: rgba(255,255,255,0.06);
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+  .track-thumb-ph {
+    width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0;
+    background: linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
   }
 
-  .track-item:hover { background: rgba(255,255,255,0.04); transform: translateX(3px); transition: background 0.15s, transform 0.2s; }
+  /* text */
+  .track-info { min-width: 0; }
+  .track-info .t-name   { font-size: 0.8rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+  .track-info .t-artist { font-size: 0.68rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .track-row.is-playing .t-name { color: var(--accent); }
 
-  .track-num { color: var(--muted); font-size: 0.7rem; text-align: right; }
+  /* right-side actions: duration + play btn + spotify link */
+  .track-actions {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  }
+  .track-dur { font-size: 0.65rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-  .track-info .name { color: var(--text); line-height: 1.3; font-size: 0.78rem; }
-  .track-info .artist { color: var(--muted); font-size: 0.68rem; margin-top: 1px; }
+  /* play button — fixed box, no innerHTML swaps ever */
+  .t-play-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%; border: none; cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+  }
+  .t-play-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .t-play-btn:active { transform: scale(0.88); }
+  .track-row.is-playing .t-play-btn { color: var(--accent); }
 
-  .track-pop {
-    text-align: right; font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
+  /* the three child svgs — always in DOM, toggled via .hidden */
+  .t-play-btn .ic { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); flex-shrink: 0; }
+  .t-play-btn .ic.hidden { display: none; }
+  @keyframes spin { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+  .t-play-btn .ic-spin { animation: spin 0.9s linear infinite; }
+
+  .t-open-btn {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); text-decoration: none; flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .t-open-btn:hover { color: #fff; }
+
+  /* ══ MINI PLAYER (slides up from bottom) ══ */
+  /* ══════════════════════════════════════════
+     MINI PLAYER
+  ══════════════════════════════════════════ */
+  #mini-player {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 200;
+    /* Triple-hide: transform + visibility + opacity so no mobile browser shows it */
+    transform: translateY(110%);
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1),
+                opacity 0.3s ease,
+                visibility 0s linear 0.4s; /* delay visibility until slide-out done */
+  }
+  #mini-player.visible {
+    transform: translateY(0);
+    visibility: visible;
+    opacity: 1;
+    pointer-events: all;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1),
+                opacity 0.3s ease,
+                visibility 0s linear 0s; /* show immediately on open */
+  }
+  @media (max-width: 640px) {
+    #mini-player { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
   }
 
-  .pop-badge {
-    display: inline-block;
-    padding: 2px 8px; border-radius: 99px;
-    font-size: 0.65rem; font-weight: 500;
+  /* Glass card */
+  .player-inner {
+    margin: 0 10px 10px;
+    border-radius: 22px;
+    overflow: hidden;
+    background: rgba(11,13,20,0.88);
+    backdrop-filter: blur(40px) saturate(1.8);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    border: 1px solid rgba(255,255,255,0.09);
+    box-shadow:
+      0 -2px 0 rgba(255,255,255,0.05) inset,
+      0 24px 64px rgba(0,0,0,0.6),
+      0 4px 20px rgba(0,0,0,0.4);
   }
+
+  /* Accent top line that matches current track colour */
+  .player-accent-line {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent) 30%, #38bdf8 70%, transparent);
+    opacity: 0.8;
+  }
+
+  /* Progress bar — flush, no padding */
+  .player-progress {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    position: relative;
+    cursor: pointer;
+    transition: height 0.2s;
+  }
+  .player-progress:hover { height: 5px; }
+  .player-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #38bdf8);
+    width: 0%;
+    transition: width 0.2s linear;
+    pointer-events: none;
+    border-radius: 0 2px 2px 0;
+  }
+  .player-progress-thumb {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+    margin-left: -6px;
+  }
+  .player-progress:hover .player-progress-thumb { opacity: 1; }
+
+  /* ── DESKTOP LAYOUT ── */
+  .player-body {
+    display: grid;
+    grid-template-columns: 64px 1fr auto auto;
+    gap: 0;
+    align-items: stretch;
+    min-height: 72px;
+  }
+
+  /* Art square — fills the full height */
+  .player-art-wrap {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .player-art {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+  .player-art-wrap:hover .player-art { transform: scale(1.05); }
+  .player-art-placeholder {
+    width: 100%; height: 100%;
+    background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* Spinning vinyl ring overlay */
+  @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  .player-art-wrap.spinning::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(circle at 50% 50%, transparent 28%, rgba(0,0,0,0.35) 29%, transparent 42%);
+    animation: spin 3s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Meta */
+  .player-meta {
+    min-width: 0;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .player-name {
+    font-size: 0.84rem; font-weight: 600;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+  .player-artist {
+    font-size: 0.68rem; color: var(--muted);
+    margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .player-time {
+    font-size: 0.58rem; color: rgba(255,255,255,0.25);
+    margin-top: 5px; font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+
+  /* Controls */
+  .player-controls {
+    display: flex; align-items: center; gap: 4px;
+    padding: 0 16px;
+    border-left: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .ctrl-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: none; border: none;
+    color: rgba(255,255,255,0.4);
+    cursor: pointer; padding: 8px; border-radius: 50%;
+    transition: color 0.15s, background 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ctrl-btn:hover  { color: #fff; background: rgba(255,255,255,0.08); }
+  .ctrl-btn:active { transform: scale(0.85); }
+
+  .ctrl-play-main {
+    width: 44px; height: 44px;
+    min-width: 44px; min-height: 44px; max-width: 44px; max-height: 44px;
+    /* Start fully transparent — green only applies once player is visible */
+    background: transparent;
+    color: transparent;
+    box-shadow: none;
+    border-radius: 50%; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: transform 0.12s, background 0.2s, color 0.2s, box-shadow 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .ctrl-play-main svg {
+    width: 18px; height: 18px; min-width: 18px; min-height: 18px; flex-shrink: 0;
+  }
+  /* Green only kicks in once the player is fully in the DOM as visible */
+  #mini-player.visible .ctrl-play-main {
+    background: var(--accent);
+    color: #000;
+  }
+  #mini-player.visible .ctrl-play-main:hover  { background: #1ed760; }
+  .ctrl-play-main:active { transform: scale(0.88); }
+  /* loading state handled by icon visibility, not class */
+  .ctrl-play-main { position: relative; }
+  .ctrl-play-main .ic { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); flex-shrink: 0; }
+  .ctrl-play-main .ic.hidden { display: none; }
+  @keyframes playerSpin { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+  .ctrl-play-main .ic-spin { animation: playerSpin 0.8s linear infinite; }
+  @media (max-width: 640px) {
+    .ctrl-play-main { width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; }
+  }
+
+  /* Volume */
+  .player-volume-wrap {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 16px;
+    border-left: 1px solid rgba(255,255,255,0.05);
+    min-width: 120px;
+  }
+  @media (max-width: 900px) { .player-volume-wrap { display: none; } }
+
+  .vol-slider {
+    -webkit-appearance: none; appearance: none;
+    flex: 1; height: 3px; border-radius: 99px;
+    background: rgba(255,255,255,0.12); cursor: pointer; outline: none;
+    transition: height 0.15s;
+  }
+  .vol-slider:hover { height: 5px; }
+  .vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px;
+    border-radius: 50%; background: #fff; cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+  .vol-slider::-moz-range-thumb {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #fff; cursor: pointer; border: none;
+  }
+
+  /* No preview notice */
+  .player-no-preview {
+    font-size: 0.63rem; color: var(--muted);
+    padding: 6px 16px 10px;
+    text-align: center; display: none;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .player-no-preview a { color: var(--accent); text-decoration: none; }
+  .player-no-preview.visible { display: block; }
+
+  /* ── MOBILE PLAYER LAYOUT ── */
+  @media (max-width: 640px) {
+    .player-inner { margin: 0 6px 6px; border-radius: 18px; }
+
+    .player-body {
+      grid-template-columns: 56px 1fr auto;
+      min-height: 64px;
+    }
+    .player-art-wrap { width: 56px; height: 56px; }
+    .player-volume-wrap { display: none; }
+    .player-controls { padding: 0 10px; gap: 2px; border-left: none; }
+
+    .ctrl-btn { padding: 6px; }
+    .player-meta { padding: 10px 12px; }
+    .player-name   { font-size: 0.78rem; }
+    .player-artist { font-size: 0.63rem; }
+    /* Hide prev/next on smallest screens to save space */
+    @media (max-width: 380px) {
+      .ctrl-prev, .ctrl-next { display: none; }
+    }
+  }
+
+  #enrich-banner { display: none !important; }
 
   /* ── DONUT ── */
   .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
@@ -1077,6 +1405,12 @@ License: MIT
   }
   .artist-era-table td { padding: 8px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
   .artist-era-table tr:hover td { background: rgba(255,255,255,0.02); }
+  @media (max-width: 640px) {
+    .artist-era-table { font-size: 0.62rem; }
+    .artist-era-table th { padding: 5px 5px; font-size: 0.56rem; }
+    .artist-era-table td { padding: 6px 5px; }
+    .artist-era-table td div[style*="width:40px"] { width: 24px !important; }
+  }
 
   /* ── STREAK CALENDAR ── */
   .streak-wrap { display: flex; gap: 3px; flex-wrap: wrap; }
@@ -1143,6 +1477,7 @@ License: MIT
   .stats-tab-btn[data-tab="sound"].active     { border-top-color: #38bdf8; }
   .stats-tab-btn[data-tab="genres"].active    { border-top-color: #a855f7; }
   .stats-tab-btn[data-tab="history"].active   { border-top-color: #facc15; }
+  .stats-tab-btn[data-tab="deepstats"].active { border-top-color: #f472b6; }
 
   .stats-tab-btn .tab-dot {
     width: 6px;
@@ -1253,12 +1588,8 @@ License: MIT
     }
 
     .upload-logo {
-      font-size: clamp(2.4rem, 13vw, 3.5rem);
       text-align: center;
-      /* Fix gradient text clipping on mobile WebKit */
-      padding: 4px 8px;
       overflow: visible;
-      line-height: 1.1;
     }
 
     .upload-tagline {
@@ -1349,6 +1680,7 @@ License: MIT
     .stats-tab-btn[data-tab="sound"].active     { background: #38bdf8; border-color: #38bdf8 !important; }
     .stats-tab-btn[data-tab="genres"].active    { background: #a855f7; border-color: #a855f7 !important; color: #fff; }
     .stats-tab-btn[data-tab="history"].active   { background: #facc15; border-color: #facc15 !important; }
+    .stats-tab-btn[data-tab="deepstats"].active { background: #f472b6; border-color: #f472b6 !important; }
 
     .stats-tab-btn.active .tab-dot { background: #000; }
 
@@ -1402,24 +1734,20 @@ License: MIT
 
     /* ── BAR CHART ── */
     .bar-row {
-      grid-template-columns: 110px 1fr 40px;
+      grid-template-columns: minmax(0, 90px) 1fr minmax(0, 36px);
       font-size: 0.68rem;
     }
 
     .bar-label { font-size: 0.68rem; }
 
     /* ── TRACK LIST ── */
-    .track-item {
-      grid-template-columns: 24px 1fr 50px;
-      gap: 10px;
-      padding: 10px 10px;
-    }
-
-    /* Hide last column on tiny screens */
-    .track-item > *:last-child { display: none; }
-
-    .track-info .name { font-size: 0.76rem; }
-    .track-info .artist { font-size: 0.63rem; }
+    .track-row { grid-template-columns: 22px 36px minmax(0,1fr) auto; gap: 8px; padding: 6px 8px; }
+    .track-dur { display: none; }
+    .track-thumb, .track-thumb-ph { width: 36px; height: 36px; }
+    .t-play-btn { width: 26px; height: 26px; }
+    .t-open-btn { width: 24px; height: 24px; }
+    .track-info .t-name { font-size: 0.76rem; }
+    .track-info .t-artist { font-size: 0.63rem; }
 
     /* ── PROFILE CARD ── */
     .profile-card {
@@ -1674,8 +2002,9 @@ License: MIT
   /* ── 480px and below: tighten even more ── */
   @media (max-width: 480px) {
     .stat-card .val { font-size: 1.3rem; }
-    .bar-row { grid-template-columns: 90px 1fr 36px; }
-    .track-item { grid-template-columns: 22px 1fr; gap: 8px; }
+    .bar-row { grid-template-columns: minmax(0, 80px) 1fr minmax(0, 32px); }
+    .track-row { grid-template-columns: 18px 32px minmax(0,1fr) auto; gap: 6px; }
+    .track-thumb, .track-thumb-ph { width: 32px; height: 32px; }
     .archetype-name { font-size: clamp(1.4rem, 7vw, 2rem); }
     .hero-title { font-size: clamp(2.2rem, 13vw, 3rem); }
     .profile-card { padding: 20px 14px; }
@@ -1708,7 +2037,66 @@ License: MIT
 <div id="upload-screen">
   <div class="upload-inner">
 
-    <div class="upload-logo">SpotLight</div>
+    <div class="upload-logo">
+      <svg id="spotlight-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 90" preserveAspectRatio="xMidYMid meet" style="width:min(600px,90vw);height:auto;display:block;margin:0 auto;" aria-label="SpotLight">
+        <defs>
+          <linearGradient id="ul-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1db954"/>
+            <stop offset="55%" stop-color="#38bdf8"/>
+            <stop offset="100%" stop-color="#a855f7"/>
+          </linearGradient>
+          <linearGradient id="ul-word" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#1db954"/>
+            <stop offset="55%" stop-color="#38bdf8"/>
+            <stop offset="100%" stop-color="#a855f7"/>
+          </linearGradient>
+        </defs>
+        <!-- Spotlight cone -->
+        <polygon points="36,6 8,72 64,72" fill="url(#ul-grad)" opacity="0.15"/>
+        <!-- Lens circle -->
+        <circle cx="36" cy="14" r="9" fill="none" stroke="url(#ul-grad)" stroke-width="2"/>
+        <circle cx="36" cy="14" r="4.5" fill="url(#ul-grad)" opacity="0.9"/>
+        <!-- EQ bars -->
+        <rect x="15" y="52" width="6" height="18" rx="2.5" fill="url(#ul-grad)" opacity="0.5"/>
+        <rect x="24" y="42" width="6" height="28" rx="2.5" fill="url(#ul-grad)" opacity="0.7"/>
+        <rect x="33" y="33" width="6" height="37" rx="2.5" fill="url(#ul-grad)" opacity="1"/>
+        <rect x="42" y="42" width="6" height="28" rx="2.5" fill="url(#ul-grad)" opacity="0.7"/>
+        <rect x="51" y="52" width="6" height="18" rx="2.5" fill="url(#ul-grad)" opacity="0.5"/>
+        <!-- Base arc -->
+        <path d="M8,72 Q36,82 64,72" fill="none" stroke="url(#ul-grad)" stroke-width="1.5" opacity="0.5"/>
+        <!-- Wordmark -->
+        <text id="spotlight-wordmark" x="78" y="66"
+          font-family="'Syne','Arial Black',sans-serif"
+          font-size="54"
+          font-weight="800"
+          letter-spacing="-2"
+          fill="url(#ul-word)">SpotLight</text>
+      </svg>
+    </div>
+    <script>
+    (function() {
+      function fitLogoViewBox() {
+        var svg = document.getElementById('spotlight-logo');
+        var txt = document.getElementById('spotlight-wordmark');
+        if (!svg || !txt) return;
+        try {
+          var bb = svg.getBBox();
+          var pad = 8;
+          var vw = bb.x - pad;
+          var vy = bb.y - pad;
+          var vww = bb.width + pad * 2;
+          var vhh = bb.height + pad * 2;
+          svg.setAttribute('viewBox', vw + ' ' + vy + ' ' + vww + ' ' + vhh);
+          svg.style.width = 'min(' + Math.round(vww) + 'px, 90vw)';
+        } catch(e) {}
+      }
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(fitLogoViewBox);
+      } else {
+        window.addEventListener('load', fitLogoViewBox);
+      }
+    })();
+    </script>
     <div class="upload-tagline">Know Your Sound</div>
 
     <!-- Drop zone -->
@@ -1788,6 +2176,9 @@ License: MIT
       </button>
       <button class="stats-tab-btn" data-tab="history" onclick="switchStatsTab('history')">
         <span class="tab-dot" style="background:#facc15"></span> History
+      </button>
+      <button class="stats-tab-btn" data-tab="deepstats" onclick="switchStatsTab('deepstats')">
+        <span class="tab-dot" style="background:#f472b6"></span> Deep Stats
       </button>
     </nav>
 
@@ -1963,6 +2354,10 @@ License: MIT
       </div>
       <div class="panel reveal">
         <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span> Most Popular Tracks</div>
+        <div id="enrich-banner" style="display:none">
+          <span class="enrich-dot"></span>
+          <span id="enrich-msg">Fetching album art from Spotify…</span>
+        </div>
         <div class="track-list" id="top-tracks"></div>
       </div>
     </div>
@@ -2300,6 +2695,165 @@ License: MIT
 
     </div><!-- /tab history -->
 
+    <!-- TAB: Deep Stats -->
+    <div class="stats-tab-pane" id="stats-tab-deepstats">
+
+    <!-- ═══ STATISTICAL SUMMARY ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg> Full Statistical Summary</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span> Descriptive Statistics (Mean · Median · Std Dev · Min · Max · P25 · P75)</div>
+      <div style="overflow-x:auto;">
+        <table class="artist-era-table" id="stats-summary-table">
+          <thead><tr><th>Feature</th><th>Mean</th><th>Median</th><th>Std Dev</th><th>Min</th><th>P25</th><th>P75</th><th>Max</th><th>Distribution</th></tr></thead>
+          <tbody id="stats-summary-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ CORRELATION MATRIX ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> Feature Correlation Matrix</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon">⬡</span> Pearson Correlation Between All Audio Features</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Green = positive correlation · Red = negative · Darker = stronger</div>
+      <div style="overflow-x:auto;">
+        <canvas id="corr-matrix-canvas" width="700" height="700" style="width:100%;max-width:600px;display:block;margin:0 auto;"></canvas>
+      </div>
+    </div>
+
+    <!-- ═══ SCATTERPLOT MATRIX ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="9" cy="9" r="3"/><circle cx="15" cy="15" r="3"/><circle cx="15" cy="9" r="3"/><circle cx="9" cy="15" r="3"/></svg> Pairwise Feature Scatter</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span> Key Feature Pairs — Each Dot is a Song</div>
+      <div id="scatter-matrix-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:8px;"></div>
+    </div>
+
+    <!-- ═══ HOUR OF DAY HEATMAP ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Save-Time Heatmap</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon">🗓</span> Day × Hour Heatmap — When Do You Save Music?</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Based on "Added At" timestamps — brighter = more saves</div>
+      <canvas id="time-heatmap-canvas" width="800" height="280" style="width:100%;"></canvas>
+      <div id="time-heatmap-legend" style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:0.68rem;color:var(--muted);justify-content:flex-end;">
+        <span>Fewer saves</span>
+        <canvas id="time-heatmap-gradient" width="120" height="12" style="border-radius:4px;"></canvas>
+        <span>More saves</span>
+      </div>
+    </div>
+
+    <!-- ═══ GENRE AUDIO FINGERPRINT ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg> Genre Audio Fingerprints</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> How Do Your Top Genres Actually Sound?</div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Average audio features per genre — Energy · Valence · Dance · Acoustic</div>
+      <div id="genre-fingerprint-grid" style="display:flex;flex-direction:column;gap:0;"></div>
+    </div>
+
+    <!-- ═══ POPULARITY DEEP DIVE ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Popularity Deep Dive</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Popularity vs Release Year</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Do older songs stay popular in your library?</div>
+        <canvas id="pop-year-scatter" width="440" height="260" style="width:100%;cursor:crosshair;"></canvas>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span> Mainstream vs Niche Score</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Your library's underground / mainstream breakdown at a glance</div>
+        <div id="mainstream-niche" style="display:flex;flex-direction:column;gap:14px;"></div>
+      </div>
+    </div>
+
+    <!-- ═══ TEMPO DEEP DIVE ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg> Tempo Intelligence</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">🥁</span> BPM Zone Analysis</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Named tempo zones — how your library splits across musical speeds</div>
+        <canvas id="bpm-zone-canvas" width="440" height="240" style="width:100%;"></canvas>
+        <div class="donut-legend" id="bpm-zone-legend"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">⚡</span> BPM vs Energy Correlation</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Is faster always more energetic in your library?</div>
+        <canvas id="bpm-energy-scatter" width="440" height="260" style="width:100%;cursor:crosshair;"></canvas>
+      </div>
+    </div>
+
+    <!-- ═══ ARTIST STATISTICS ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1db954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Artist Intelligence</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">📊</span> Artist Depth Score</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Artists ranked by how deep you go (songs + diversity score)</div>
+        <div id="artist-depth-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">🎯</span> Artist Popularity Spread</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Range of popularity among your top artists</div>
+        <canvas id="artist-pop-spread" width="440" height="280" style="width:100%;"></canvas>
+      </div>
+    </div>
+
+    <!-- ═══ LIBRARY HEALTH ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Library Health Report</div>
+    <div class="panel reveal">
+      <div class="panel-title"><span class="icon">🏥</span> What Makes Your Library Unique — A Full Diagnostic</div>
+      <div id="library-health-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:8px;"></div>
+    </div>
+
+    <!-- ═══ DECADES RADAR ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Decade Comparison</div>
+    <div class="grid-2">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">🎵</span> How Each Decade Sounds in Your Library</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:14px">Average audio features split by the decade a song was released</div>
+        <div id="decade-feature-table" style="overflow-x:auto;max-width:100%;"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">📈</span> Popularity by Decade</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Are old songs more or less popular in your library?</div>
+        <canvas id="decade-pop-canvas" width="440" height="220" style="width:100%;height:auto;max-width:100%;display:block;"></canvas>
+      </div>
+    </div>
+
+    <!-- ═══ DURATION INTELLIGENCE ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg> Duration Intelligence</div>
+    <div class="grid-3">
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">⏱</span> Song Length Buckets</div>
+        <div id="duration-buckets" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">📏</span> Duration vs Energy</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-bottom:8px">Do longer songs tend to be more mellow?</div>
+        <canvas id="dur-energy-scatter" width="300" height="200" style="width:100%;"></canvas>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-title"><span class="icon">🎬</span> Total Runtime Facts</div>
+        <div id="runtime-facts" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- ═══ ADVANCED INSIGHTS ═══ -->
+    <div class="section-divider"></div>
+    <div class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> Advanced Listener Insights</div>
+    <div class="panel reveal">
+      <div id="advanced-insights-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:4px;"></div>
+    </div>
+
+    </div><!-- /tab deepstats -->
+
   </div><!-- /container -->
 </div><!-- /app -->
 
@@ -2522,6 +3076,9 @@ function buildAll() {
   buildMoodIntelligence(songs, nums);
   buildReleasePatterns(songs, nums);
   buildCollectionAnalytics(songs, nums);
+
+  // DEEP STATS TAB
+  buildDeepStats(songs, nums);
 }
 
 // ── INSIGHTS ──
@@ -2631,21 +3188,460 @@ function buildBars(id, entries, color, unit) {
 }
 
 // ── TOP TRACKS ──
+const PROXY_URL = 'spotify-proxy.php';
+
+// Global track registry: id → { name, artist, duration, spotifyUrl, previewUrl, artUrl }
+window._tracks = {};
+window._trackOrder = []; // ordered list of IDs for prev/next
+
 function buildTopTracks(songs) {
-  const sorted = [...songs].filter(s => numField(s,'Popularity')).sort((a,b) => numField(b,'Popularity')-numField(a,'Popularity')).slice(0,15);
+  const sorted = [...songs]
+    .filter(s => numField(s, 'Popularity'))
+    .sort((a, b) => numField(b, 'Popularity') - numField(a, 'Popularity'))
+    .slice(0, 15);
+
   const list = document.getElementById('top-tracks');
-  sorted.forEach((s,i) => {
-    const pop = numField(s,'Popularity');
-    const color = pop >= 80 ? COLORS.green : pop >= 60 ? COLORS.yellow : COLORS.orange;
-    const el = document.createElement('div');
-    el.className = 'track-item';
-    el.innerHTML = `
-      <div class="track-num">${i+1}</div>
-      <div class="track-info"><div class="name">${s['Track Name']}</div><div class="artist">${s['Artist Name(s)'].split(';')[0]}</div></div>
-      <div class="track-pop"><span class="pop-badge" style="background:${color}22;color:${color}">${pop}</span></div>
-      <div style="font-size:0.65rem;color:var(--muted);text-align:right">${fmtMs(numField(s,'Duration (ms)'))}</div>`;
-    list.appendChild(el);
+  list.innerHTML = '';
+  window._trackOrder = [];
+
+  sorted.forEach((s, i) => {
+    const uri      = s['Track URI'] || '';
+    const trackId  = uri.split(':').pop();
+    const name     = s['Track Name'] || 'Unknown';
+    const artist   = (s['Artist Name(s)'] || '').split(';')[0].trim();
+    const dur      = numField(s, 'Duration (ms)');
+    const spotifyUrl = trackId ? `https://open.spotify.com/track/${trackId}` : '';
+
+    window._tracks[trackId] = { trackId, name, artist, dur, spotifyUrl, previewUrl: null, artUrl: null };
+    window._trackOrder.push(trackId);
+
+    // Build row entirely via DOM — zero innerHTML, zero reflow surprises
+    const row = document.createElement('div');
+    row.className = 'track-row';
+    row.id = 'row-' + trackId;
+    row.addEventListener('click', () => playerPlay(trackId));
+
+    // — number
+    const numEl = document.createElement('div');
+    numEl.className = 'track-num';
+    numEl.id = 'tnum-' + trackId;
+    numEl.textContent = i + 1;
+
+    // — art placeholder
+    const artEl = document.createElement('div');
+    artEl.className = 'track-thumb-ph';
+    artEl.id = 'art-' + trackId;
+
+    // — text
+    const infoEl = document.createElement('div');
+    infoEl.className = 'track-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 't-name';
+    nameEl.textContent = name;
+    const artistEl = document.createElement('div');
+    artistEl.className = 't-artist';
+    artistEl.textContent = artist;
+    infoEl.append(nameEl, artistEl);
+
+    // — actions
+    const actEl = document.createElement('div');
+    actEl.className = 'track-actions';
+
+    const durEl = document.createElement('div');
+    durEl.className = 'track-dur';
+    durEl.textContent = fmtMs(dur);
+
+    // play button — three SVGs always in DOM, swap via .hidden class only
+    const playBtn = document.createElement('button');
+    playBtn.className = 't-play-btn';
+    playBtn.id = 'playbtn-' + trackId;
+    playBtn.title = 'Preview';
+    playBtn.addEventListener('click', e => { e.stopPropagation(); playerPlay(trackId); });
+
+    const svgPlay = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svgPlay.setAttribute('class','ic ic-play'); svgPlay.setAttribute('width','10'); svgPlay.setAttribute('height','10'); svgPlay.setAttribute('viewBox','0 0 24 24'); svgPlay.setAttribute('fill','currentColor');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon'); poly.setAttribute('points','6 3 20 12 6 21 6 3'); svgPlay.appendChild(poly);
+
+    const svgPause = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svgPause.setAttribute('class','ic ic-pause hidden'); svgPause.setAttribute('width','10'); svgPause.setAttribute('height','10'); svgPause.setAttribute('viewBox','0 0 24 24'); svgPause.setAttribute('fill','currentColor');
+    const r1 = document.createElementNS('http://www.w3.org/2000/svg','rect'); r1.setAttribute('x','4'); r1.setAttribute('y','3'); r1.setAttribute('width','4'); r1.setAttribute('height','18'); r1.setAttribute('rx','1');
+    const r2 = document.createElementNS('http://www.w3.org/2000/svg','rect'); r2.setAttribute('x','16'); r2.setAttribute('y','3'); r2.setAttribute('width','4'); r2.setAttribute('height','18'); r2.setAttribute('rx','1');
+    svgPause.append(r1, r2);
+
+    const svgSpin = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svgSpin.setAttribute('class','ic ic-spin hidden'); svgSpin.setAttribute('width','10'); svgSpin.setAttribute('height','10'); svgSpin.setAttribute('viewBox','0 0 24 24'); svgSpin.setAttribute('fill','none'); svgSpin.setAttribute('stroke','currentColor'); svgSpin.setAttribute('stroke-width','2.5'); svgSpin.setAttribute('stroke-linecap','round');
+    [[12,2,12,6],[12,18,12,22,.3],[4.93,4.93,7.76,7.76,.6],[16.24,16.24,19.07,19.07,.2],[2,12,6,12,.4],[18,12,22,12,.1]].forEach(([x1,y1,x2,y2,op])=>{ const l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x2); l.setAttribute('y2',y2); if(op!==undefined) l.setAttribute('opacity',op); svgSpin.appendChild(l); });
+
+    playBtn.append(svgPlay, svgPause, svgSpin);
+
+    actEl.append(durEl, playBtn);
+
+    if (spotifyUrl) {
+      const link = document.createElement('a');
+      link.className = 't-open-btn';
+      link.href = spotifyUrl; link.target = '_blank'; link.rel = 'noopener'; link.title = 'Open in Spotify';
+      link.addEventListener('click', e => e.stopPropagation());
+      const svgLink = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svgLink.setAttribute('width','11'); svgLink.setAttribute('height','11'); svgLink.setAttribute('viewBox','0 0 24 24'); svgLink.setAttribute('fill','none'); svgLink.setAttribute('stroke','currentColor'); svgLink.setAttribute('stroke-width','2.5');
+      svgLink.innerHTML = '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>';
+      link.appendChild(svgLink);
+      actEl.appendChild(link);
+    }
+
+    row.append(numEl, artEl, infoEl, actEl);
+    list.appendChild(row);
   });
+
+  // Fetch art + preview URLs via PHP proxy
+  const payload = sorted.map(s => ({
+    id:     (s['Track URI'] || '').split(':').pop(),
+    name:   s['Track Name'] || '',
+    artist: (s['Artist Name(s)'] || '').split(';')[0].trim(),
+  })).filter(t => t.id);
+
+  if (payload.length) fetchArt(payload);
+}
+
+// ── ART + PREVIEW ENRICHMENT ──
+// Calls iTunes directly (CORS-enabled, no proxy needed).
+// Each track is fetched individually so we can render art as each one arrives.
+async function fetchArt(tracks) {
+  await Promise.all(tracks.map(t => fetchSingleTrackArt(t)));
+}
+
+async function fetchSingleTrackArt({ id, name, artist }) {
+  if (!name) return;
+  try {
+    const q    = encodeURIComponent((name + ' ' + artist).trim());
+    const url  = `https://itunes.apple.com/search?term=${q}&media=music&entity=song&limit=8`;
+    const res  = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // Score results — best match wins
+    let best = null, bestScore = -1;
+    const sName   = name.toLowerCase();
+    const sArtist = artist.toLowerCase();
+
+    for (const r of data.results || []) {
+      const rName   = (r.trackName   || '').toLowerCase();
+      const rArtist = (r.artistName  || '').toLowerCase();
+      let score = 0;
+      if (rName === sName)                                          score += 4;
+      else if (rName.includes(sName) || sName.includes(rName))     score += 2;
+      if (sArtist && (rArtist.includes(sArtist) || sArtist.includes(rArtist))) score += 2;
+      if (score > bestScore) { bestScore = score; best = r; }
+    }
+
+    if (!best || bestScore < 2) return; // no confident match
+
+    const artUrl     = (best.artworkUrl100 || '').replace('100x100bb', '600x600bb');
+    const previewUrl = best.previewUrl || null;
+
+    const track = window._tracks[id];
+    if (!track) return;
+
+    if (previewUrl && !track.previewUrl) track.previewUrl = previewUrl;
+
+    if (artUrl && !track.artUrl) {
+      track.artUrl = artUrl;
+
+      // Swap placeholder → img as soon as image loads
+      const img = new Image();
+      img.className   = 'track-thumb';
+      img.alt         = name;
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const placeholder = document.getElementById('art-' + id);
+        if (placeholder) placeholder.replaceWith(img);
+        // Update player if this track is active
+        if (window._playerTrackId === id) playerUpdateArt(id);
+      };
+      img.onerror = () => {};
+      img.src = artUrl;
+    }
+  } catch (e) {
+    // iTunes unreachable — try PHP proxy as fallback
+    try {
+      const names = encodeURIComponent(name + '|||' + artist);
+      const res   = await fetch(`${PROXY_URL}?action=art&ids=${id}&names=${names}`);
+      if (!res.ok) return;
+      const data  = await res.json();
+      const t     = (data.tracks || [])[0];
+      if (!t) return;
+      const track = window._tracks[id];
+      if (!track) return;
+      if (t.preview_url && !track.previewUrl) track.previewUrl = t.preview_url;
+      if (t.album_art && !track.artUrl) {
+        track.artUrl = t.album_art;
+        const img = new Image();
+        img.className = 'track-thumb';
+        img.alt = name;
+        img.onload = () => {
+          const ph = document.getElementById('art-' + id);
+          if (ph) ph.replaceWith(img);
+          if (window._playerTrackId === id) playerUpdateArt(id);
+        };
+        img.onerror = () => {};
+        img.src = t.album_art;
+      }
+    } catch (e2) { /* both sources failed */ }
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  MINI PLAYER ENGINE  (no innerHTML swaps, ever)
+// ══════════════════════════════════════════════════════
+let _audio         = null;
+let _playerTrackId = null;
+let _rafId         = null;
+
+// Toggle the three icons inside a play-button by toggling .hidden
+// Works for both the row button (.t-play-btn) and the main ctrl button
+function _setIcons(btn, which) {
+  // which: 'play' | 'pause' | 'spin'
+  if (!btn) return;
+  btn.querySelector('.ic-play')?.classList.toggle('hidden', which !== 'play');
+  btn.querySelector('.ic-pause')?.classList.toggle('hidden', which !== 'pause');
+  btn.querySelector('.ic-spin')?.classList.toggle('hidden', which !== 'spin');
+}
+
+function _rowBtn(trackId)  { return document.getElementById('playbtn-' + trackId); }
+function _mainBtn()        { return document.getElementById('player-play-main'); }
+function _row(trackId)     { return document.getElementById('row-' + trackId); }
+function _numEl(trackId)   { return document.getElementById('tnum-' + trackId); }
+
+// Update row visual state without touching innerHTML
+function playerSetRowState(trackId, state) {
+  const btn  = _rowBtn(trackId);
+  const row  = _row(trackId);
+  const numb = _numEl(trackId);
+  if (!btn || !row) return;
+
+  row.classList.toggle('is-playing', state === 'playing');
+
+  if (state === 'playing') {
+    _setIcons(btn, 'pause');
+    if (numb) { numb.textContent = ''; numb.appendChild(_barsIcon()); }
+  } else if (state === 'loading') {
+    _setIcons(btn, 'spin');
+    if (numb) numb.textContent = (window._trackOrder.indexOf(trackId) + 1) || '—';
+  } else {
+    // idle or paused
+    _setIcons(btn, 'play');
+    if (numb) numb.textContent = (window._trackOrder.indexOf(trackId) + 1) || '—';
+  }
+}
+
+// Create the animated bars icon as a real DOM node (no innerHTML)
+function _barsIcon() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width','10'); svg.setAttribute('height','10');
+  svg.setAttribute('viewBox','0 0 24 24'); svg.setAttribute('fill','#1db954');
+  const r1 = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r1.setAttribute('x','4'); r1.setAttribute('y','3'); r1.setAttribute('width','4'); r1.setAttribute('height','18'); r1.setAttribute('rx','1');
+  const r2 = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r2.setAttribute('x','16'); r2.setAttribute('y','3'); r2.setAttribute('width','4'); r2.setAttribute('height','18'); r2.setAttribute('rx','1');
+  svg.append(r1, r2);
+  return svg;
+}
+
+// Update album art in mini-player using DOM, not innerHTML
+function playerUpdateArt(trackId) {
+  const track = window._tracks[trackId];
+  if (!track) return;
+  const wrap = document.getElementById('player-art-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = ''; // only place we clear this specific container
+  if (track.artUrl) {
+    const img = document.createElement('img');
+    img.className = 'player-art';
+    img.alt = track.name;
+    img.src = track.artUrl;
+    img.onerror = () => { wrap.innerHTML = ''; wrap.appendChild(_artPlaceholder()); };
+    wrap.appendChild(img);
+  } else {
+    wrap.appendChild(_artPlaceholder());
+  }
+}
+
+function _artPlaceholder() {
+  const div = document.createElement('div');
+  div.className = 'player-art-placeholder';
+  div.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(255,255,255,0.18)" stroke="none"><path d="M9 3v11.5A3.5 3.5 0 1 0 12.5 18V8l7-1.5V14A3.5 3.5 0 1 0 23 17.5V5L9 3z"/></svg>';
+  return div;
+}
+
+function playerUpdateMeta(trackId) {
+  const track = window._tracks[trackId];
+  if (!track) return;
+  const nameEl   = document.getElementById('player-name');
+  const artistEl = document.getElementById('player-artist');
+  if (nameEl)   nameEl.textContent = track.name;
+  if (artistEl) artistEl.textContent = track.artist;
+  playerUpdateArt(trackId);
+}
+
+function playerUpdateProgress() {
+  if (!_audio) return;
+  const pct    = _audio.duration ? (_audio.currentTime / _audio.duration) * 100 : 0;
+  const fill   = document.getElementById('player-progress-fill');
+  const thumb  = document.getElementById('player-progress-thumb');
+  const timeEl = document.getElementById('player-time');
+  if (fill)   fill.style.width = pct + '%';
+  if (thumb)  thumb.style.left = `calc(${pct}% - 6px)`;
+  if (timeEl) {
+    const cur = fmtMs(_audio.currentTime * 1000);
+    const tot = _audio.duration ? fmtMs(_audio.duration * 1000) : fmtMs(window._tracks[_playerTrackId]?.dur || 0);
+    timeEl.textContent = cur + ' / ' + tot;
+  }
+  _rafId = requestAnimationFrame(playerUpdateProgress);
+}
+
+function playerSetMainBtn(which) {
+  // which: 'play' | 'pause' | 'spin'
+  _setIcons(_mainBtn(), which);
+}
+
+async function playerPlay(trackId) {
+  const track = window._tracks[trackId];
+  if (!track) return;
+
+  // Same track — toggle play/pause
+  if (_playerTrackId === trackId && _audio) {
+    if (_audio.paused) {
+      _audio.play();
+      playerSetRowState(trackId, 'playing');
+      playerSetMainBtn('pause');
+      playerUpdateProgress();
+    } else {
+      _audio.pause();
+      playerSetRowState(trackId, 'paused');
+      playerSetMainBtn('play');
+      cancelAnimationFrame(_rafId);
+    }
+    return;
+  }
+
+  // Stop previous track
+  if (_audio) { _audio.pause(); _audio.src = ''; cancelAnimationFrame(_rafId); }
+  if (_playerTrackId) playerSetRowState(_playerTrackId, 'idle');
+
+  // Set loading state on both buttons immediately — no innerHTML touched
+  _playerTrackId = trackId;
+  playerSetRowState(trackId, 'loading');
+  playerSetMainBtn('spin');
+
+  // Update meta in player bar
+  playerUpdateMeta(trackId);
+  const noPreviewEl = document.getElementById('player-no-preview');
+  noPreviewEl.classList.remove('visible');
+  noPreviewEl.textContent = '';
+
+  // Fetch preview URL if not cached
+  let previewUrl = track.previewUrl;
+  if (!previewUrl) {
+    try {
+      const names = encodeURIComponent(track.name + '|||' + track.artist);
+      const res = await fetch(`${PROXY_URL}?action=art&ids=${trackId}&names=${names}`);
+      if (res.ok) {
+        const data = await res.json();
+        const t = (data.tracks || [])[0];
+        if (t?.preview_url) { previewUrl = t.preview_url; track.previewUrl = previewUrl; }
+        if (t?.album_art && !track.artUrl) { track.artUrl = t.album_art; playerUpdateArt(trackId); }
+      }
+    } catch (e) {}
+  }
+
+  // No preview found
+  if (!previewUrl) {
+    playerSetRowState(trackId, 'idle');
+    playerSetMainBtn('play');
+    document.getElementById('mini-player').classList.add('visible');
+    const a = document.createElement('a');
+    a.href = track.spotifyUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'open in Spotify ↗';
+    noPreviewEl.textContent = 'No 30s preview available — ';
+    noPreviewEl.appendChild(a);
+    noPreviewEl.classList.add('visible');
+    return;
+  }
+
+  // Load and play
+  _audio = new Audio(previewUrl);
+  _audio.crossOrigin = 'anonymous';
+  _audio.volume = parseFloat(document.getElementById('vol-slider')?.value ?? 0.8);
+
+  _audio.addEventListener('canplay', () => {
+    document.getElementById('mini-player').classList.add('visible');
+    _audio.play().catch(() => {});
+    playerSetRowState(trackId, 'playing');
+    playerSetMainBtn('pause');
+    playerUpdateProgress();
+  }, { once: true });
+
+  _audio.addEventListener('ended', () => playerNext());
+
+  _audio.addEventListener('error', () => {
+    playerSetRowState(trackId, 'idle');
+    playerSetMainBtn('play');
+    const a = document.createElement('a');
+    a.href = track.spotifyUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'open in Spotify ↗';
+    noPreviewEl.textContent = 'Preview failed — ';
+    noPreviewEl.appendChild(a);
+    noPreviewEl.classList.add('visible');
+  });
+
+  _audio.load();
+}
+
+function playerToggle() {
+  if (!_audio || !_playerTrackId) return;
+  if (_audio.paused) {
+    _audio.play();
+    playerSetRowState(_playerTrackId, 'playing');
+    playerSetMainBtn('pause');
+    playerUpdateProgress();
+  } else {
+    _audio.pause();
+    playerSetRowState(_playerTrackId, 'paused');
+    playerSetMainBtn('play');
+    cancelAnimationFrame(_rafId);
+  }
+}
+
+function playerNext() {
+  if (!_playerTrackId) return;
+  const idx  = window._trackOrder.indexOf(_playerTrackId);
+  const next = window._trackOrder[(idx + 1) % window._trackOrder.length];
+  if (next) playerPlay(next);
+}
+
+function playerPrev() {
+  if (!_playerTrackId) return;
+  if (_audio && _audio.currentTime > 3) { _audio.currentTime = 0; return; }
+  const idx  = window._trackOrder.indexOf(_playerTrackId);
+  const prev = window._trackOrder[(idx - 1 + window._trackOrder.length) % window._trackOrder.length];
+  if (prev) playerPlay(prev);
+}
+
+function playerSeek(e) {
+  if (!_audio || !_audio.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  _audio.currentTime = pct * _audio.duration;
+}
+
+function playerSetVolume(val) {
+  if (_audio) _audio.volume = parseFloat(val);
+}
+
+function playerClose() {
+  if (_audio) { _audio.pause(); _audio.src = ''; }
+  cancelAnimationFrame(_rafId);
+  if (_playerTrackId) playerSetRowState(_playerTrackId, 'idle');
+  _playerTrackId = null; _audio = null;
+  document.getElementById('player-art-wrap')?.classList.remove('spinning');
+  document.getElementById('mini-player').classList.remove('visible');
 }
 
 // ── AUDIO FEATURES ──
@@ -4372,7 +5368,7 @@ function shareArchetype() {
     if (!canvas) return;
 
     const title = 'SpotLight — ' + a.name;
-    const text  = 'My music archetype is "' + a.name + '" on SpotLight — Know Your Sound';
+    const text  = 'My music archetype is "' + a.name + '" on SpotLight — Know Your Sound. Find out yours at https://spot.totient.dev';
 
     // Convert canvas to blob for sharing
     canvas.toBlob(blob => {
@@ -5301,6 +6297,56 @@ function switchStatsTab(tabId) {
 </div>
 
 <!-- Mobile Bottom Nav Bar (visible only on mobile when app is shown) -->
+<!-- ══ MINI PLAYER ══ -->
+<div id="mini-player">
+  <div class="player-inner">
+    <div class="player-accent-line"></div>
+    <div class="player-progress" id="player-progress" onclick="playerSeek(event)">
+      <div class="player-progress-fill" id="player-progress-fill"></div>
+      <div class="player-progress-thumb" id="player-progress-thumb"></div>
+    </div>
+    <div class="player-body">
+      <!-- Art -->
+      <div class="player-art-wrap" id="player-art-wrap">
+        <div class="player-art-placeholder">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(255,255,255,0.18)" stroke="none"><path d="M9 3v11.5A3.5 3.5 0 1 0 12.5 18V8l7-1.5V14A3.5 3.5 0 1 0 23 17.5V5L9 3z"/></svg>
+        </div>
+      </div>
+      <!-- Meta -->
+      <div class="player-meta">
+        <div class="player-name"   id="player-name">Select a track</div>
+        <div class="player-artist" id="player-artist"></div>
+        <div class="player-time"   id="player-time">0:00 / 0:30</div>
+      </div>
+      <!-- Controls -->
+      <div class="player-controls">
+        <button class="ctrl-btn ctrl-prev" onclick="playerPrev()" title="Previous">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><rect x="4" y="4" width="2" height="16" rx="1"/></svg>
+        </button>
+        <button class="ctrl-play-main" id="player-play-main" onclick="playerToggle()" title="Play/Pause">
+          <svg class="ic ic-play"  width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          <svg class="ic ic-pause hidden" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="4" height="18" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/></svg>
+          <svg class="ic ic-spin  hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22" opacity=".3"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76" opacity=".6"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07" opacity=".2"/><line x1="2" y1="12" x2="6" y2="12" opacity=".4"/><line x1="18" y1="12" x2="22" y2="12" opacity=".1"/></svg>
+        </button>
+        <button class="ctrl-btn ctrl-next" onclick="playerNext()" title="Next">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="18" y="4" width="2" height="16" rx="1"/></svg>
+        </button>
+        <button class="ctrl-btn" onclick="playerClose()" title="Close">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <!-- Volume (desktop) -->
+      <div class="player-volume-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <input class="vol-slider" id="vol-slider" type="range" min="0" max="1" step="0.02" value="0.8"
+               oninput="playerSetVolume(this.value)">
+      </div>
+    </div>
+    <div class="player-no-preview" id="player-no-preview"></div>
+  </div>
+</div>
+
+<nav id="mobile-bottom-nav"
 <nav id="mobile-bottom-nav" style="display:none">
   <button class="mob-nav-btn active" data-tab="overview" onclick="switchStatsTab('overview');setMobNav(this)">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
@@ -5318,9 +6364,12 @@ function switchStatsTab(tabId) {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
     <span>Genres</span>
   </button>
-  <button class="mob-nav-btn" data-tab="history" onclick="switchStatsTab('history');setMobNav(this)">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+  <button class="mob-nav-btn" data-tab="history" onclick="switchStatsTab('history');setMobNav(this)">    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
     <span>History</span>
+  </button>
+  <button class="mob-nav-btn" data-tab="deepstats" onclick="switchStatsTab('deepstats');setMobNav(this)">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+    <span>Deep</span>
   </button>
 </nav>
 
@@ -5370,6 +6419,7 @@ function switchStatsTab(tabId) {
 .mob-nav-btn[data-tab="sound"].active     { color: #38bdf8; background: rgba(56,189,248,0.12); }
 .mob-nav-btn[data-tab="genres"].active    { color: #a855f7; background: rgba(168,85,247,0.12); }
 .mob-nav-btn[data-tab="history"].active   { color: #facc15; background: rgba(250,204,21,0.12); }
+.mob-nav-btn[data-tab="deepstats"].active { color: #f472b6; background: rgba(244,114,182,0.12); }
 
 .mob-nav-btn:active {
   transform: scale(0.9);
@@ -5432,6 +6482,964 @@ function switchStatsTab(tabId) {
   });
   document.addEventListener('DOMContentLoaded', initMobileNav);
 })();
+
+// ═══════════════════════════════════════════════════════════════════
+// DEEP STATS — All new statistical visualizations
+// ═══════════════════════════════════════════════════════════════════
+
+function buildDeepStats(songs, nums) {
+  buildStatsSummaryTable(songs, nums);
+  buildCorrMatrix(nums);
+  buildScatterMatrix(songs, nums);
+  buildTimeHeatmap(songs);
+  buildGenreFingerprints(songs);
+  buildPopularityDeepDive(songs, nums);
+  buildTempoIntelligence(songs, nums);
+  buildArtistIntelligence(songs, nums);
+  buildLibraryHealth(songs, nums);
+  buildDecadeComparison(songs);
+  buildDurationIntelligence(songs, nums);
+  buildAdvancedInsights(songs, nums);
+}
+
+// ── HELPER: percentile ──
+function percentile(arr, p) {
+  const s = [...arr].sort((a,b)=>a-b);
+  const idx = (p/100)*(s.length-1);
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  return lo===hi ? s[lo] : s[lo]*(1-(idx-lo)) + s[hi]*(idx-lo);
+}
+function stddev(arr) {
+  const m = arr.reduce((a,b)=>a+b,0)/arr.length;
+  return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);
+}
+function pearsonCorr(a,b) {
+  const n=Math.min(a.length,b.length);
+  const ma=a.reduce((x,y)=>x+y,0)/n, mb=b.reduce((x,y)=>x+y,0)/n;
+  let num=0,da=0,db=0;
+  for(let i=0;i<n;i++){num+=(a[i]-ma)*(b[i]-mb);da+=(a[i]-ma)**2;db+=(b[i]-mb)**2;}
+  return num/Math.sqrt(da*db)||0;
+}
+
+// ── MINI SPARK BAR (inline sparkline histogram) ──
+function miniSparkline(values, min, max, color, bins=20) {
+  const c = document.createElement('canvas');
+  c.width=120; c.height=24;
+  c.style.cssText='width:90px;height:18px;vertical-align:middle;';
+  const ctx=c.getContext('2d');
+  const w=(max-min)/bins;
+  const counts=Array(bins).fill(0);
+  values.forEach(v=>{const i=Math.min(bins-1,Math.floor((v-min)/w));if(i>=0)counts[i]++;});
+  const mx=Math.max(...counts,1);
+  counts.forEach((cnt,i)=>{
+    const bh=(cnt/mx)*24;
+    const grad=ctx.createLinearGradient(0,24-bh,0,24);
+    grad.addColorStop(0,color+'ff');grad.addColorStop(1,color+'44');
+    ctx.fillStyle=grad;
+    ctx.fillRect(i*(120/bins),24-bh,(120/bins)-1,bh);
+  });
+  return c;
+}
+
+// ── 1. STATISTICAL SUMMARY TABLE ──
+function buildStatsSummaryTable(songs, nums) {
+  const features = [
+    { key:'Danceability', data:nums.dance, min:0, max:1, fmt:v=>(v*100).toFixed(1)+'%', color:COLORS.orange },
+    { key:'Energy',       data:nums.energy,  min:0, max:1, fmt:v=>(v*100).toFixed(1)+'%', color:COLORS.red },
+    { key:'Valence',      data:nums.valence,  min:0, max:1, fmt:v=>(v*100).toFixed(1)+'%', color:COLORS.yellow },
+    { key:'Acousticness', data:nums.acoustic, min:0, max:1, fmt:v=>(v*100).toFixed(1)+'%', color:COLORS.teal },
+    { key:'Instrumentalness', data:nums.instr, min:0, max:1, fmt:v=>(v*100).toFixed(1)+'%', color:COLORS.blue },
+    { key:'Liveness',    data:nums.liveness,  min:0, max:1, fmt:v=>(v*100).toFixed(1)+'%', color:COLORS.pink },
+    { key:'Speechiness', data:nums.speech,    min:0, max:1, fmt:v=>(v*100).toFixed(1)+'%', color:COLORS.purple },
+    { key:'Tempo (BPM)', data:nums.tempo,     min:60, max:210, fmt:v=>v.toFixed(1), color:COLORS.green },
+    { key:'Loudness (dB)',data:nums.loudness, min:-25,max:0, fmt:v=>v.toFixed(2), color:COLORS.orange },
+    { key:'Popularity',  data:nums.pop,       min:0, max:100, fmt:v=>v.toFixed(1), color:COLORS.yellow },
+    { key:'Duration (min)',data:nums.dur.map(d=>d/60000), min:0.5, max:8, fmt:v=>v.toFixed(2), color:COLORS.blue },
+  ];
+
+  const tbody = document.getElementById('stats-summary-body');
+  if (!tbody) return;
+
+  features.forEach(f => {
+    if (!f.data.length) return;
+    const sorted = [...f.data].sort((a,b)=>a-b);
+    const mean   = f.data.reduce((a,b)=>a+b,0)/f.data.length;
+    const median = percentile(f.data, 50);
+    const sd     = stddev(f.data);
+    const p25    = percentile(f.data, 25);
+    const p75    = percentile(f.data, 75);
+    const mn     = sorted[0], mx = sorted[sorted.length-1];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:600;color:${f.color}">${f.key}</td>
+      <td>${f.fmt(mean)}</td>
+      <td>${f.fmt(median)}</td>
+      <td style="color:var(--muted)">${f.fmt(sd)}</td>
+      <td style="color:var(--muted)">${f.fmt(mn)}</td>
+      <td>${f.fmt(p25)}</td>
+      <td>${f.fmt(p75)}</td>
+      <td style="color:var(--muted)">${f.fmt(mx)}</td>
+      <td></td>`;
+    // Insert sparkline into last cell
+    const lastTd = tr.querySelector('td:last-child');
+    lastTd.appendChild(miniSparkline(f.data, f.min, f.max, f.color));
+    tbody.appendChild(tr);
+  });
+}
+
+// ── 2. CORRELATION MATRIX ──
+function buildCorrMatrix(nums) {
+  const canvas = document.getElementById('corr-matrix-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const features = [
+    { label:'Dance',  data:nums.dance },
+    { label:'Energy', data:nums.energy },
+    { label:'Valence',data:nums.valence },
+    { label:'Acoustic',data:nums.acoustic },
+    { label:'Instr',  data:nums.instr },
+    { label:'Live',   data:nums.liveness },
+    { label:'Speech', data:nums.speech },
+    { label:'Tempo',  data:nums.tempo.map(v=>v/200) },
+    { label:'Loud',   data:nums.loudness.map(v=>(v+25)/25) },
+    { label:'Pop',    data:nums.pop.map(v=>v/100) },
+  ].filter(f=>f.data.length>0);
+
+  const N = features.length;
+  const W = canvas.width, H = canvas.height;
+  const PAD = { top:70, left:70, right:20, bottom:20 };
+  const cellW = (W-PAD.left-PAD.right)/N;
+  const cellH = (H-PAD.top-PAD.bottom)/N;
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  ctx.fillStyle='#13131f';
+  ctx.fillRect(0,0,W,H);
+
+  // Compute correlation matrix
+  const corrs = Array.from({length:N},(_,i)=>Array.from({length:N},(_,j)=>{
+    if(i===j) return 1;
+    const minLen = Math.min(features[i].data.length, features[j].data.length);
+    return pearsonCorr(features[i].data.slice(0,minLen), features[j].data.slice(0,minLen));
+  }));
+
+  // Draw cells
+  for(let i=0;i<N;i++) for(let j=0;j<N;j++) {
+    const r = corrs[i][j];
+    const x = PAD.left + j*cellW;
+    const y = PAD.top  + i*cellH;
+    // Color: green=positive, red=negative
+    const intensity = Math.abs(r);
+    let col;
+    if(i===j) col = 'rgba(255,255,255,0.08)';
+    else if(r>0) col = `rgba(29,185,84,${intensity*0.8+0.05})`;
+    else col = `rgba(248,113,113,${intensity*0.8+0.05})`;
+
+    ctx.fillStyle = col;
+    ctx.fillRect(x+1,y+1,cellW-2,cellH-2);
+
+    // Value text
+    if(i!==j) {
+      ctx.fillStyle = intensity>0.4 ? '#fff' : 'rgba(255,255,255,0.6)';
+      ctx.font = `bold ${Math.max(9,Math.round(cellW*0.22))}px "DM Mono",monospace`;
+      ctx.textAlign='center';
+      ctx.fillText(r.toFixed(2), x+cellW/2, y+cellH/2+4);
+    } else {
+      ctx.fillStyle='rgba(255,255,255,0.45)';
+      ctx.font=`bold ${Math.max(8,Math.round(cellW*0.2))}px "DM Mono",monospace`;
+      ctx.textAlign='center';
+      ctx.fillText(features[i].label, x+cellW/2, y+cellH/2+4);
+    }
+  }
+
+  // Column labels (top)
+  ctx.fillStyle='rgba(255,255,255,0.55)';
+  ctx.font=`${Math.max(8,Math.round(cellW*0.18))}px "DM Mono",monospace`;
+  ctx.textAlign='center';
+  for(let j=0;j<N;j++) {
+    const x=PAD.left+j*cellW+cellW/2;
+    ctx.save();
+    ctx.translate(x, PAD.top-8);
+    ctx.rotate(-0.6);
+    ctx.fillText(features[j].label, 0, 0);
+    ctx.restore();
+  }
+  // Row labels (left)
+  ctx.textAlign='right';
+  for(let i=0;i<N;i++) {
+    const y=PAD.top+i*cellH+cellH/2+4;
+    ctx.fillText(features[i].label, PAD.left-8, y);
+  }
+}
+
+// ── 3. SCATTER MATRIX (select pairs) ──
+function buildScatterMatrix(songs, nums) {
+  const container = document.getElementById('scatter-matrix-grid');
+  if(!container) return;
+
+  const pairs = [
+    { xKey:'Energy',       yKey:'Danceability', xData:nums.energy,  yData:nums.dance,   xColor:COLORS.red,    yColor:COLORS.orange },
+    { xKey:'Valence',      yKey:'Energy',        xData:nums.valence, yData:nums.energy,  xColor:COLORS.yellow, yColor:COLORS.red    },
+    { xKey:'Acousticness', yKey:'Energy',        xData:nums.acoustic,yData:nums.energy,  xColor:COLORS.teal,   yColor:COLORS.red    },
+    { xKey:'Tempo',        yKey:'Danceability',  xData:nums.tempo.map(v=>v/200), yData:nums.dance, xColor:COLORS.purple, yColor:COLORS.orange },
+    { xKey:'Popularity',   yKey:'Valence',       xData:nums.pop.map(v=>v/100),   yData:nums.valence, xColor:COLORS.green, yColor:COLORS.yellow },
+    { xKey:'Loudness',     yKey:'Energy',        xData:nums.loudness.map(v=>(v+25)/25), yData:nums.energy, xColor:COLORS.orange, yColor:COLORS.red },
+  ];
+
+  // Use a limited sample for performance
+  const sample = songs.length > 300 ? songs.filter((_,i)=>i%Math.ceil(songs.length/300)===0) : songs;
+
+  pairs.forEach(pair => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText='background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;';
+    const title = document.createElement('div');
+    title.style.cssText='font-size:0.68rem;color:var(--muted);margin-bottom:8px;text-align:center;';
+    title.textContent=`${pair.xKey} → ${pair.yKey}`;
+    wrap.appendChild(title);
+
+    const c = document.createElement('canvas');
+    c.width=300; c.height=200;
+    c.style.cssText='width:100%;';
+    wrap.appendChild(c);
+    container.appendChild(wrap);
+
+    const ctx=c.getContext('2d');
+    const W=c.width, H=c.height;
+    const PAD={top:10,right:10,bottom:22,left:28};
+    const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+
+    ctx.fillStyle='#11111a'; ctx.fillRect(0,0,W,H);
+
+    // Grid
+    [0,0.25,0.5,0.75,1].forEach(t=>{
+      const y=PAD.top+cH*(1-t);
+      ctx.strokeStyle='rgba(255,255,255,0.05)';
+      ctx.lineWidth=1;
+      ctx.setLineDash([2,4]);
+      ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
+      ctx.setLineDash([]);
+      if(t>0&&t<1){
+        ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='8px DM Mono';ctx.textAlign='right';
+        ctx.fillText((t*100).toFixed(0)+'%',PAD.left-3,y+3);
+      }
+    });
+
+    // Compute corr for color
+    const xData = pair.xData, yData = pair.yData;
+    const minLen=Math.min(xData.length,yData.length);
+    const corr=pearsonCorr(xData.slice(0,minLen),yData.slice(0,minLen));
+    const dotColor = corr>0.2?COLORS.green:corr<-0.2?COLORS.red:COLORS.blue;
+
+    // Dots
+    sample.forEach(s=>{
+      const xv=parseFloat(s[pair.xKey==='Tempo'?'Tempo':pair.xKey==='Popularity'?'Popularity':pair.xKey==='Loudness'?'Loudness':pair.xKey]);
+      const yv=parseFloat(s[pair.yKey==='Tempo'?'Tempo':pair.yKey==='Popularity'?'Popularity':pair.yKey==='Loudness'?'Loudness':pair.yKey]);
+      if(isNaN(xv)||isNaN(yv)) return;
+      // Normalize to 0-1
+      let xn,yn;
+      if(pair.xKey==='Tempo') xn=Math.min(1,Math.max(0,(xv-60)/150));
+      else if(pair.xKey==='Popularity') xn=xv/100;
+      else if(pair.xKey==='Loudness') xn=Math.min(1,Math.max(0,(xv+25)/25));
+      else xn=Math.min(1,Math.max(0,xv));
+      if(pair.yKey==='Tempo') yn=Math.min(1,Math.max(0,(yv-60)/150));
+      else if(pair.yKey==='Popularity') yn=yv/100;
+      else if(pair.yKey==='Loudness') yn=Math.min(1,Math.max(0,(yv+25)/25));
+      else yn=Math.min(1,Math.max(0,yv));
+      const px=PAD.left+xn*cW, py=PAD.top+cH*(1-yn);
+      ctx.save();
+      ctx.globalAlpha=0.55;
+      ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
+      ctx.fillStyle=dotColor;ctx.fill();
+      ctx.restore();
+    });
+
+    // Trend line
+    if(Math.abs(corr)>0.1) {
+      // Simple linear regression
+      const xs=xData.slice(0,minLen), ys=yData.slice(0,minLen);
+      const mx2=xs.reduce((a,b)=>a+b,0)/xs.length;
+      const my2=ys.reduce((a,b)=>a+b,0)/ys.length;
+      let num=0,den=0;
+      for(let i=0;i<xs.length;i++){num+=(xs[i]-mx2)*(ys[i]-my2);den+=(xs[i]-mx2)**2;}
+      const slope=den?num/den:0, intercept=my2-slope*mx2;
+      const xmin=0,xmax=1;
+      const y0=slope*xmin+intercept, y1=slope*xmax+intercept;
+      const mapX=v=>PAD.left+v*cW;
+      const mapY=v=>PAD.top+cH*(1-Math.min(1,Math.max(0,v)));
+      ctx.save();
+      ctx.beginPath();ctx.moveTo(mapX(xmin),mapY(y0));ctx.lineTo(mapX(xmax),mapY(y1));
+      ctx.strokeStyle=dotColor+'88';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.restore();
+    }
+
+    // Corr label
+    ctx.fillStyle=Math.abs(corr)>0.4?(corr>0?COLORS.green:COLORS.red):'rgba(255,255,255,0.4)';
+    ctx.font='bold 9px DM Mono';ctx.textAlign='left';
+    ctx.fillText(`r=${corr.toFixed(2)}`,PAD.left+3,PAD.top+12);
+
+    // Axis labels
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='8px DM Mono';
+    ctx.textAlign='center';ctx.fillText(pair.xKey,PAD.left+cW/2,H-4);
+  });
+}
+
+// ── 4. TIME HEATMAP (Day × Hour) ──
+function buildTimeHeatmap(songs) {
+  const canvas=document.getElementById('time-heatmap-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.fillStyle='#11111a'; ctx.fillRect(0,0,W,H);
+
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const PAD={top:30,left:44,right:16,bottom:28};
+  const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+  const cellW=cW/24, cellH=cH/7;
+
+  // Count saves per [day][hour]
+  const matrix=Array.from({length:7},()=>Array(24).fill(0));
+  let hasData=false;
+  songs.forEach(s=>{
+    const d=s['Added At'];
+    if(!d) return;
+    hasData=true;
+    const dt=new Date(d);
+    const day=dt.getDay(), hour=dt.getHours();
+    if(day>=0&&day<7&&hour>=0&&hour<24) matrix[day][hour]++;
+  });
+
+  if(!hasData){
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='14px DM Mono';ctx.textAlign='center';
+    ctx.fillText('No timestamp data available',W/2,H/2);return;
+  }
+
+  const maxVal=Math.max(...matrix.flat(),1);
+
+  // Cells
+  for(let day=0;day<7;day++) for(let hour=0;hour<24;hour++) {
+    const count=matrix[day][hour];
+    const intensity=count/maxVal;
+    const x=PAD.left+hour*cellW, y=PAD.top+day*cellH;
+    // Gradient: dark→pink
+    const r=Math.round(15+intensity*(244-15));
+    const g=Math.round(17+intensity*(114-17));
+    const b=Math.round(26+intensity*(182-26));
+    ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.fillRect(x+0.5,y+0.5,cellW-1,cellH-1);
+    if(count>0&&cellW>18){
+      ctx.fillStyle=intensity>0.5?'rgba(255,255,255,0.8)':'rgba(255,255,255,0.4)';
+      ctx.font=`${Math.min(8,cellW*0.4)}px DM Mono`;ctx.textAlign='center';
+      ctx.fillText(count,x+cellW/2,y+cellH/2+3);
+    }
+  }
+
+  // Day labels
+  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='10px DM Mono';ctx.textAlign='right';
+  DAYS.forEach((d,i)=>{
+    ctx.fillText(d,PAD.left-5,PAD.top+i*cellH+cellH/2+4);
+  });
+
+  // Hour labels
+  ctx.textAlign='center';
+  [0,3,6,9,12,15,18,21,23].forEach(h=>{
+    const x=PAD.left+h*cellW+cellW/2;
+    ctx.fillText(h===0?'12am':h===12?'12pm':h<12?h+'am':(h-12)+'pm',x,PAD.top-8);
+  });
+
+  // Legend gradient
+  const lgCanvas=document.getElementById('time-heatmap-gradient');
+  if(lgCanvas){
+    const lc=lgCanvas.getContext('2d');
+    const grad=lc.createLinearGradient(0,0,120,0);
+    grad.addColorStop(0,'rgb(15,17,26)');grad.addColorStop(1,'rgb(244,114,182)');
+    lc.fillStyle=grad;lc.fillRect(0,0,120,12);
+  }
+}
+
+// ── 5. GENRE AUDIO FINGERPRINTS ──
+function buildGenreFingerprints(songs) {
+  const container=document.getElementById('genre-fingerprint-grid');
+  if(!container) return;
+
+  // Group by genre
+  const byGenre={};
+  songs.forEach(s=>{
+    const g=(s['Genres']||s['Genre']||'').split(',')[0].trim()||'(no genre)';
+    if(!byGenre[g]) byGenre[g]=[];
+    byGenre[g].push(s);
+  });
+
+  const sorted=Object.entries(byGenre).filter(([g])=>g!=='(no genre)').sort((a,b)=>b[1].length-a[1].length).slice(0,12);
+
+  const features=[
+    {key:'Energy',color:COLORS.red},
+    {key:'Danceability',color:COLORS.orange},
+    {key:'Valence',color:COLORS.yellow},
+    {key:'Acousticness',color:COLORS.teal},
+    {key:'Popularity',scale:100,color:COLORS.green},
+  ];
+
+  sorted.forEach(([genre, tracks],gi)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);';
+
+    const nameEl=document.createElement('div');
+    nameEl.style.cssText=`width:120px;flex-shrink:0;font-size:0.72rem;font-weight:600;color:${COLOR_LIST[gi%COLOR_LIST.length]};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
+    nameEl.textContent=genre;
+    nameEl.title=genre;
+
+    const countEl=document.createElement('div');
+    countEl.style.cssText='width:32px;flex-shrink:0;font-size:0.65rem;color:var(--muted);text-align:right;';
+    countEl.textContent=tracks.length;
+
+    const barsEl=document.createElement('div');
+    barsEl.style.cssText='flex:1;display:flex;flex-direction:column;gap:3px;';
+
+    features.forEach(f=>{
+      const vals=tracks.map(t=>{
+        const v=parseFloat(t[f.key]);
+        return isNaN(v)?null:(f.scale?v/f.scale:v);
+      }).filter(v=>v!==null);
+      if(!vals.length) return;
+      const avgV=vals.reduce((a,b)=>a+b,0)/vals.length;
+
+      const barRow=document.createElement('div');
+      barRow.style.cssText='display:flex;align-items:center;gap:6px;';
+      barRow.innerHTML=`
+        <span style="width:70px;font-size:0.6rem;color:var(--muted);flex-shrink:0;">${f.key}</span>
+        <div style="flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;">
+          <div style="width:${(avgV*100).toFixed(0)}%;height:100%;background:${f.color};border-radius:3px;transition:width 0.8s;"></div>
+        </div>
+        <span style="width:36px;font-size:0.6rem;color:var(--muted);text-align:right;">${(avgV*100).toFixed(0)}%</span>`;
+      barsEl.appendChild(barRow);
+    });
+
+    row.appendChild(nameEl);
+    row.appendChild(countEl);
+    row.appendChild(barsEl);
+    container.appendChild(row);
+  });
+}
+
+// ── 6. POPULARITY DEEP DIVE ──
+function buildPopularityDeepDive(songs, nums) {
+  // Pop vs Year scatter
+  const canvas=document.getElementById('pop-year-scatter');
+  if(canvas) {
+    const ctx=canvas.getContext('2d');
+    const W=canvas.width, H=canvas.height;
+    const PAD={top:14,right:14,bottom:28,left:36};
+    const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+    ctx.fillStyle='#11111a'; ctx.fillRect(0,0,W,H);
+
+    // Collect year-pop pairs
+    const pts=songs.map(s=>{
+      const y=parseInt((s['Release Date']||'').slice(0,4));
+      const p=parseFloat(s['Popularity']);
+      return{y,p};
+    }).filter(d=>d.y>=1960&&d.y<=2030&&!isNaN(d.p));
+
+    const minY=1960, maxY=new Date().getFullYear();
+    const minP=0, maxP=100;
+
+    // Grid
+    [0,25,50,75,100].forEach(p=>{
+      const y=PAD.top+cH*(1-p/100);
+      ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='9px DM Mono';ctx.textAlign='right';
+      ctx.fillText(p,PAD.left-4,y+3);
+    });
+    [1970,1980,1990,2000,2010,2020].forEach(yr=>{
+      const x=PAD.left+(yr-minY)/(maxY-minY)*cW;
+      ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.setLineDash([2,4]);
+      ctx.beginPath();ctx.moveTo(x,PAD.top);ctx.lineTo(x,PAD.top+cH);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='9px DM Mono';ctx.textAlign='center';
+      ctx.fillText(yr,x,PAD.top+cH+14);
+    });
+
+    // Dots colored by popularity
+    const sample=pts.length>500?pts.filter((_,i)=>i%Math.ceil(pts.length/500)===0):pts;
+    sample.forEach(({y,p})=>{
+      const px=PAD.left+(y-minY)/(maxY-minY)*cW;
+      const py=PAD.top+cH*(1-p/100);
+      const hue=p*1.2; // green for high pop
+      ctx.save();ctx.globalAlpha=0.55;
+      ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
+      ctx.fillStyle=`hsl(${hue},70%,60%)`;ctx.fill();ctx.restore();
+    });
+
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px DM Mono';ctx.textAlign='center';
+    ctx.fillText('Release Year',PAD.left+cW/2,H-2);
+    ctx.save();ctx.translate(10,PAD.top+cH/2);ctx.rotate(-Math.PI/2);
+    ctx.fillText('Popularity',0,0);ctx.restore();
+  }
+
+  // Mainstream vs Niche breakdown
+  const container=document.getElementById('mainstream-niche');
+  if(!container||!nums.pop.length) return;
+  const tiers=[
+    {label:'Viral / Mega Hit',min:85,max:100,color:'#facc15',icon:'🔥'},
+    {label:'Mainstream',min:70,max:85,color:COLORS.green,icon:'📻'},
+    {label:'Popular',min:55,max:70,color:COLORS.blue,icon:'🎵'},
+    {label:'Mid-tier',min:40,max:55,color:COLORS.purple,icon:'🎸'},
+    {label:'Niche / Underground',min:20,max:40,color:COLORS.orange,icon:'🎙️'},
+    {label:'Deep Cut / Obscure',min:0,max:20,color:COLORS.muted||'#6b6b7a',icon:'💎'},
+  ];
+  tiers.forEach(t=>{
+    const count=nums.pop.filter(v=>v>=t.min&&v<t.max).length;
+    const pct=(count/nums.pop.length*100).toFixed(1);
+    const el=document.createElement('div');
+    el.style.cssText='display:flex;align-items:center;gap:10px;';
+    el.innerHTML=`
+      <span style="font-size:1rem;">${t.icon}</span>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;margin-bottom:3px;">
+          <span style="color:${t.color};font-weight:600;">${t.label}</span>
+          <span style="color:var(--muted);">${count} tracks · ${pct}%</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:${t.color};border-radius:3px;"></div>
+        </div>
+      </div>`;
+    container.appendChild(el);
+  });
+}
+
+// ── 7. TEMPO INTELLIGENCE ──
+function buildTempoIntelligence(songs, nums) {
+  const zones=[
+    {label:'Larghetto',min:40,max:66,color:COLORS.blue},
+    {label:'Andante',min:66,max:76,color:COLORS.teal},
+    {label:'Moderato',min:76,max:108,color:COLORS.green},
+    {label:'Allegretto',min:108,max:120,color:COLORS.yellow},
+    {label:'Allegro',min:120,max:156,color:COLORS.orange},
+    {label:'Vivace',min:156,max:176,color:COLORS.red},
+    {label:'Presto+',min:176,max:300,color:COLORS.pink},
+  ];
+
+  // BPM Zone donut
+  const zoneCounts=zones.map(z=>({
+    ...z,
+    count:nums.tempo.filter(v=>v>=z.min&&v<z.max).length
+  }));
+
+  const canvas=document.getElementById('bpm-zone-canvas');
+  if(canvas){
+    const donutData=zoneCounts.filter(z=>z.count>0).map(z=>[`${z.label} (${z.min}–${z.max})`,z.count,z.color]);
+    drawDonut('bpm-zone-canvas',donutData,'bpm-zone-legend');
+  }
+
+  // BPM vs Energy scatter
+  const c2=document.getElementById('bpm-energy-scatter');
+  if(!c2||!nums.tempo.length) return;
+  const ctx=c2.getContext('2d');
+  const W=c2.width, H=c2.height;
+  const PAD={top:14,right:14,bottom:30,left:40};
+  const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+  ctx.fillStyle='#11111a'; ctx.fillRect(0,0,W,H);
+
+  // Grid
+  [0,0.25,0.5,0.75,1].forEach(t=>{
+    const y=PAD.top+cH*(1-t);
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='8px DM Mono';ctx.textAlign='right';
+    ctx.fillText((t*100).toFixed(0)+'%',PAD.left-4,y+3);
+  });
+  [60,90,120,150,180,210].forEach(bpm=>{
+    const x=PAD.left+(bpm-60)/150*cW;
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='8px DM Mono';ctx.textAlign='center';
+    ctx.fillText(bpm,x,PAD.top+cH+14);
+  });
+
+  const sample2=songs.length>400?songs.filter((_,i)=>i%Math.ceil(songs.length/400)===0):songs;
+  sample2.forEach(s=>{
+    const t=parseFloat(s['Tempo']), e=parseFloat(s['Energy']);
+    if(isNaN(t)||isNaN(e)) return;
+    const px=PAD.left+(t-60)/150*cW, py=PAD.top+cH*(1-e);
+    const z=zones.find(z=>t>=z.min&&t<z.max)||{color:COLORS.muted};
+    ctx.save();ctx.globalAlpha=0.6;
+    ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
+    ctx.fillStyle=z.color;ctx.fill();ctx.restore();
+  });
+
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px DM Mono';ctx.textAlign='center';
+  ctx.fillText('Tempo (BPM)',PAD.left+cW/2,H-4);
+  ctx.save();ctx.translate(11,PAD.top+cH/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText('Energy',0,0);ctx.restore();
+}
+
+// ── 8. ARTIST INTELLIGENCE ──
+function buildArtistIntelligence(songs, nums) {
+  // Artist depth score
+  const artistSongs={};
+  songs.forEach(s=>{
+    const a=s['Artist Name(s)'].split(';')[0].trim();
+    if(!artistSongs[a]) artistSongs[a]=[];
+    artistSongs[a].push(s);
+  });
+
+  const topArtists=Object.entries(artistSongs).sort((a,b)=>b[1].length-a[1].length).slice(0,12);
+
+  const container=document.getElementById('artist-depth-list');
+  if(container){
+    topArtists.forEach(([artist,tracks],i)=>{
+      const avgPop=avg(tracks.map(s=>parseFloat(s['Popularity'])).filter(v=>!isNaN(v)));
+      const tempoVar=stddev(tracks.map(s=>parseFloat(s['Tempo'])).filter(v=>!isNaN(v)));
+      const valenceVar=stddev(tracks.map(s=>parseFloat(s['Valence'])).filter(v=>!isNaN(v)));
+      // Depth = songs + (genre diversity proxy = tempo+valence variance)
+      const depth=(tracks.length*10+tempoVar+valenceVar*100).toFixed(0);
+      const el=document.createElement('div');
+      el.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);';
+      el.innerHTML=`
+        <span style="width:20px;font-size:0.68rem;color:var(--muted);text-align:right;flex-shrink:0;">${i+1}</span>
+        <div style="flex:1;overflow:hidden;">
+          <div style="font-size:0.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${artist}</div>
+          <div style="display:flex;gap:10px;font-size:0.62rem;color:var(--muted);margin-top:2px;">
+            <span>${tracks.length} tracks</span>
+            <span>Pop: ${isNaN(avgPop)?'—':avgPop.toFixed(0)}</span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;color:${COLOR_LIST[i%COLOR_LIST.length]};">${depth}</div>
+          <div style="font-size:0.58rem;color:var(--muted);">depth score</div>
+        </div>`;
+      container.appendChild(el);
+    });
+  }
+
+  // Artist popularity spread (horizontal box-plot style)
+  const canvas=document.getElementById('artist-pop-spread');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const PAD={top:14,right:16,bottom:14,left:110};
+  const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+  ctx.fillStyle='#11111a'; ctx.fillRect(0,0,W,H);
+
+  const top10=topArtists.slice(0,10);
+  const rowH=cH/top10.length;
+
+  // x gridlines
+  [0,25,50,75,100].forEach(p=>{
+    const x=PAD.left+p/100*cW;
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.setLineDash([2,4]);
+    ctx.beginPath();ctx.moveTo(x,PAD.top);ctx.lineTo(x,PAD.top+cH);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='8px DM Mono';ctx.textAlign='center';
+    ctx.fillText(p,x,PAD.top+cH+10);
+  });
+
+  top10.forEach(([artist,tracks],i)=>{
+    const pops=tracks.map(s=>parseFloat(s['Popularity'])).filter(v=>!isNaN(v));
+    if(!pops.length) return;
+    const p25v=percentile(pops,25), p75v=percentile(pops,75);
+    const med=percentile(pops,50), mn=Math.min(...pops), mx=Math.max(...pops);
+    const cy=PAD.top+i*rowH+rowH/2;
+    const color=COLOR_LIST[i%COLOR_LIST.length];
+
+    // Whiskers
+    ctx.strokeStyle=color+'66';ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left+mn/100*cW,cy);ctx.lineTo(PAD.left+mx/100*cW,cy);ctx.stroke();
+
+    // Box
+    ctx.fillStyle=color+'22';ctx.strokeStyle=color+'88';ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.rect(PAD.left+p25v/100*cW,cy-rowH*0.2,
+             (p75v-p25v)/100*cW,rowH*0.4);
+    ctx.fill();ctx.stroke();
+
+    // Median
+    ctx.strokeStyle=color;ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left+med/100*cW,cy-rowH*0.22);
+    ctx.lineTo(PAD.left+med/100*cW,cy+rowH*0.22);ctx.stroke();
+
+    // Artist label
+    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='10px DM Mono';ctx.textAlign='right';
+    ctx.fillText(artist.length>14?artist.slice(0,13)+'…':artist,PAD.left-5,cy+4);
+  });
+}
+
+// ── 9. LIBRARY HEALTH ──
+function buildLibraryHealth(songs, nums) {
+  const container=document.getElementById('library-health-grid');
+  if(!container) return;
+
+  const avgE=avg(nums.energy), avgV=avg(nums.valence), avgD=avg(nums.dance);
+  const avgA=avg(nums.acoustic), avgP=avg(nums.pop), sdE=stddev(nums.energy), sdV=stddev(nums.valence);
+  const genres=new Set(songs.map(s=>(s['Genres']||s['Genre']||'').split(',')[0].trim()).filter(Boolean));
+  const artists=new Set(songs.map(s=>s['Artist Name(s)'].split(';')[0].trim()));
+  const explicit=songs.filter(s=>s['Explicit']==='true').length;
+  const totalMs=nums.dur.reduce((a,b)=>a+b,0);
+  const decades=new Set(songs.map(s=>{const y=parseInt((s['Release Date']||'').slice(0,4));return isNaN(y)?null:Math.floor(y/10)*10}).filter(Boolean));
+
+  const metrics=[
+    {icon:'🎸',label:'Unique Artists',value:artists.size,sub:'Breadth of your taste',color:COLORS.green},
+    {icon:'🎭',label:'Unique Genres',value:genres.size,sub:'Genre diversity',color:COLORS.purple},
+    {icon:'📅',label:'Decades Covered',value:decades.size,sub:'Temporal range',color:COLORS.yellow},
+    {icon:'⚡',label:'Energy Diversity',value:(sdE*100).toFixed(1)+'%',sub:`σ = ${(sdE*100).toFixed(1)}% — ${sdE>0.25?'Very eclectic':'Consistent'}`,color:COLORS.red},
+    {icon:'😊',label:'Mood Diversity',value:(sdV*100).toFixed(1)+'%',sub:`σ = ${(sdV*100).toFixed(1)}% — ${sdV>0.25?'Emotionally wide':'Steady vibe'}`,color:COLORS.orange},
+    {icon:'🎵',label:'Songs / Artist',value:(songs.length/artists.size).toFixed(1),sub:'Average depth per artist',color:COLORS.blue},
+    {icon:'🔊',label:'Avg Popularity',value:avgP.toFixed(0),sub:avgP>65?'Mainstream-leaning':avgP>45?'Mixed taste':'Underground explorer',color:COLORS.teal},
+    {icon:'🎤',label:'Explicit Ratio',value:((explicit/songs.length)*100).toFixed(0)+'%',sub:`${explicit} explicit tracks`,color:COLORS.pink},
+    {icon:'⏰',label:'Total Hours',value:(totalMs/3600000).toFixed(1)+'h',sub:`${(totalMs/60000).toFixed(0)} minutes total`,color:COLORS.yellow},
+    {icon:'🎹',label:'Major / Minor',value:`${songs.filter(s=>s['Mode']==='1').length} / ${songs.filter(s=>s['Mode']==='0').length}`,sub:'Major vs minor key songs',color:COLORS.green},
+    {icon:'🕺',label:'Danceability',value:(avgD*100).toFixed(0)+'%',sub:avgD>0.7?'Club-ready':'More chill than danceable',color:COLORS.orange},
+    {icon:'🌿',label:'Acoustic Ratio',value:(avgA*100).toFixed(0)+'%',sub:avgA>0.5?'Mostly acoustic':'Mostly electric',color:COLORS.teal},
+  ];
+
+  metrics.forEach(m=>{
+    const el=document.createElement('div');
+    el.style.cssText='background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:14px;';
+    el.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:1.2rem;">${m.icon}</span>
+        <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">${m.label}</span>
+      </div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;color:${m.color};margin-bottom:4px;">${m.value}</div>
+      <div style="font-size:0.65rem;color:var(--muted);">${m.sub}</div>`;
+    container.appendChild(el);
+  });
+}
+
+// ── 10. DECADE COMPARISON ──
+function buildDecadeComparison(songs) {
+  const byDecade={};
+  songs.forEach(s=>{
+    const y=parseInt((s['Release Date']||'').slice(0,4));
+    if(isNaN(y)||y<1950||y>2030) return;
+    const decade=Math.floor(y/10)*10;
+    if(!byDecade[decade]) byDecade[decade]=[];
+    byDecade[decade].push(s);
+  });
+
+  const decades=Object.keys(byDecade).sort();
+  const features=[
+    {key:'Energy',color:COLORS.red},
+    {key:'Valence',color:COLORS.yellow},
+    {key:'Danceability',color:COLORS.orange},
+    {key:'Acousticness',color:COLORS.teal},
+  ];
+
+  // Decade feature table
+  const tableContainer=document.getElementById('decade-feature-table');
+  if(tableContainer&&decades.length){
+    const table=document.createElement('table');
+    table.className='artist-era-table';
+    const thead=document.createElement('thead');
+    thead.innerHTML=`<tr><th>Decade</th><th>Tracks</th>${features.map(f=>`<th style="color:${f.color}">${f.key}</th>`).join('')}<th>Avg Pop</th></tr>`;
+    table.appendChild(thead);
+    const tbody=document.createElement('tbody');
+    decades.forEach(dec=>{
+      const tracks=byDecade[dec];
+      const tr=document.createElement('tr');
+      const featureCells=features.map(f=>{
+        const vals=tracks.map(s=>parseFloat(s[f.key])).filter(v=>!isNaN(v));
+        const a=vals.length?avg(vals):0;
+        return `<td>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <div style="width:40px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
+              <div style="width:${(a*100).toFixed(0)}%;height:100%;background:${f.color};"></div>
+            </div>
+            <span style="font-size:0.68rem;color:var(--muted);">${(a*100).toFixed(0)}%</span>
+          </div>
+        </td>`;
+      }).join('');
+      const pops=tracks.map(s=>parseFloat(s['Popularity'])).filter(v=>!isNaN(v));
+      const avgPop=pops.length?avg(pops):0;
+      tr.innerHTML=`<td style="color:var(--accent);font-weight:600;">${dec}s</td><td style="color:var(--muted);">${tracks.length}</td>${featureCells}<td>${avgPop.toFixed(0)}</td>`;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+  }
+
+  // Decade popularity canvas
+  const canvas=document.getElementById('decade-pop-canvas');
+  if(!canvas||!decades.length) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const PAD={top:14,right:14,bottom:30,left:40};
+  const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+  ctx.fillStyle='#11111a'; ctx.fillRect(0,0,W,H);
+
+  const decAvgPops=decades.map(d=>{
+    const pops=byDecade[d].map(s=>parseFloat(s['Popularity'])).filter(v=>!isNaN(v));
+    return pops.length?avg(pops):0;
+  });
+  const maxPop=Math.max(...decAvgPops,1);
+  const barW=cW/decades.length;
+
+  [0,25,50,75,100].forEach(v=>{
+    const y=PAD.top+cH*(1-v/100);
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;ctx.setLineDash([2,4]);
+    ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='9px DM Mono';ctx.textAlign='right';
+    ctx.fillText(v,PAD.left-4,y+3);
+  });
+
+  decades.forEach((dec,i)=>{
+    const p=decAvgPops[i];
+    const bh=(p/100)*cH;
+    const x=PAD.left+i*barW;
+    const y=PAD.top+cH-bh;
+    const hue=120*(p/100); // red→green
+    ctx.save();
+    ctx.shadowColor=`hsl(${hue},70%,55%)`;ctx.shadowBlur=6;
+    ctx.fillStyle=`hsl(${hue},70%,55%)`;
+    ctx.beginPath();ctx.roundRect(x+2,y,barW-4,bh,[3,3,0,0]);ctx.fill();
+    ctx.restore();
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='9px DM Mono';ctx.textAlign='center';
+    ctx.fillText(dec+'s',x+barW/2,PAD.top+cH+14);
+  });
+}
+
+// ── 11. DURATION INTELLIGENCE ──
+function buildDurationIntelligence(songs, nums) {
+  // Duration buckets
+  const buckets=[
+    {label:'< 1 min (Intro/Skit)',min:0,max:60000,color:COLORS.muted||'#6b6b7a'},
+    {label:'1–2 min (Short)',min:60000,max:120000,color:COLORS.blue},
+    {label:'2–3.5 min (Radio Edit)',min:120000,max:210000,color:COLORS.green},
+    {label:'3.5–5 min (Standard)',min:210000,max:300000,color:COLORS.yellow},
+    {label:'5–7 min (Extended)',min:300000,max:420000,color:COLORS.orange},
+    {label:'7–10 min (Long)',min:420000,max:600000,color:COLORS.red},
+    {label:'10+ min (Epic)',min:600000,max:Infinity,color:COLORS.purple},
+  ];
+
+  const container=document.getElementById('duration-buckets');
+  if(container){
+    buckets.forEach(b=>{
+      const count=nums.dur.filter(v=>v>=b.min&&v<b.max).length;
+      const pct=(count/nums.dur.length*100).toFixed(1);
+      const el=document.createElement('div');
+      el.style.cssText='display:flex;align-items:center;gap:8px;';
+      el.innerHTML=`
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;font-size:0.68rem;margin-bottom:2px;">
+            <span style="color:${b.color};">${b.label}</span>
+            <span style="color:var(--muted);">${count} · ${pct}%</span>
+          </div>
+          <div style="height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${b.color};border-radius:3px;"></div>
+          </div>
+        </div>`;
+      container.appendChild(el);
+    });
+  }
+
+  // Duration vs Energy scatter
+  const c=document.getElementById('dur-energy-scatter');
+  if(c&&nums.dur.length){
+    const ctx=c.getContext('2d');
+    const W=c.width,H=c.height;
+    const PAD={top:10,right:10,bottom:22,left:28};
+    const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+    ctx.fillStyle='#11111a'; ctx.fillRect(0,0,W,H);
+    const sample=songs.length>300?songs.filter((_,i)=>i%Math.ceil(songs.length/300)===0):songs;
+    sample.forEach(s=>{
+      const dur=parseFloat(s['Duration (ms)'])/60000;
+      const e=parseFloat(s['Energy']);
+      if(isNaN(dur)||isNaN(e)||dur<0.5) return;
+      const px=PAD.left+Math.min(1,(dur-0.5)/9)*cW;
+      const py=PAD.top+cH*(1-e);
+      ctx.save();ctx.globalAlpha=0.5;
+      ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);
+      ctx.fillStyle=COLORS.blue;ctx.fill();ctx.restore();
+    });
+    ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='8px DM Mono';ctx.textAlign='center';
+    ctx.fillText('Duration (min)',PAD.left+cW/2,H-4);
+  }
+
+  // Runtime facts
+  const factsContainer=document.getElementById('runtime-facts');
+  if(factsContainer&&nums.dur.length){
+    const totalMs=nums.dur.reduce((a,b)=>a+b,0);
+    const avgMs=totalMs/nums.dur.length;
+    const facts=[
+      {icon:'⏳',label:'Total Runtime',value:((totalMs/3600000)|0)+'h '+((totalMs/60000%60)|0)+'min'},
+      {icon:'📀',label:'Avg Song Length',value:fmtMs(avgMs)},
+      {icon:'📻',label:'Would fill LPs',value:((totalMs/2700000)).toFixed(1)+' vinyl sides'},
+      {icon:'✈️',label:'Longest flight it covers',value:totalMs>36000000?'LA→Sydney (15h)':totalMs>21600000?'NYC→London (7h)':totalMs>10800000?'NYC→LA (6h)':'Shorter than NYC→LA'},
+      {icon:'💤',label:'Days of music',value:((totalMs/86400000)).toFixed(2)+' days'},
+    ];
+    facts.forEach(f=>{
+      const el=document.createElement('div');
+      el.style.cssText='display:flex;align-items:flex-start;gap:8px;';
+      el.innerHTML=`
+        <span style="font-size:1rem;flex-shrink:0;">${f.icon}</span>
+        <div>
+          <div style="font-size:0.65rem;color:var(--muted);">${f.label}</div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--accent);">${f.value}</div>
+        </div>`;
+      factsContainer.appendChild(el);
+    });
+  }
+}
+
+// ── 12. ADVANCED INSIGHTS ──
+function buildAdvancedInsights(songs, nums) {
+  const container=document.getElementById('advanced-insights-grid');
+  if(!container) return;
+
+  const avgE=avg(nums.energy), avgV=avg(nums.valence), avgD=avg(nums.dance);
+  const avgT=avg(nums.tempo), avgP=avg(nums.pop), avgA=avg(nums.acoustic);
+  const sdE=stddev(nums.energy), sdV=stddev(nums.valence);
+
+  const totalMs=nums.dur.reduce((a,b)=>a+b,0);
+  const artists=new Set(songs.map(s=>s['Artist Name(s)'].split(';')[0].trim()));
+  const genres=new Set(songs.map(s=>(s['Genres']||s['Genre']||'').split(',')[0].trim()).filter(Boolean));
+
+  // Most saved month of year
+  const monthCounts=Array(12).fill(0);
+  songs.forEach(s=>{const d=s['Added At'];if(d){const m=new Date(d).getMonth();if(m>=0&&m<12)monthCounts[m]++;}});
+  const peakMonth=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][monthCounts.indexOf(Math.max(...monthCounts))];
+
+  // Most active saving year
+  const yearCounts={};
+  songs.forEach(s=>{const d=s['Added At'];if(d){const y=new Date(d).getFullYear();yearCounts[y]=(yearCounts[y]||0)+1;}});
+  const mostActiveYear=Object.entries(yearCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  // Oldest song
+  const withDate=songs.filter(s=>s['Release Date']&&s['Release Date'].length>=4);
+  const oldestSong=withDate.sort((a,b)=>a['Release Date'].localeCompare(b['Release Date']))[0];
+  const newestSong=withDate[withDate.length-1];
+
+  // Single-song artists
+  const singleSongArtists=Object.entries(
+    songs.reduce((m,s)=>{const a=s['Artist Name(s)'].split(';')[0].trim();m[a]=(m[a]||0)+1;return m;},{}))
+    .filter(([,c])=>c===1).length;
+
+  const insights=[
+    {icon:'📅',title:'Peak Saving Month',body:`You added the most songs in <strong style="color:${COLORS.yellow}">${peakMonth}</strong> — something about that time of year gets you collecting.`},
+    {icon:'🎯',title:'Your Musical DNA Score',body:`Energy ${(avgE*100).toFixed(0)}% · Mood ${(avgV*100).toFixed(0)}% · Dance ${(avgD*100).toFixed(0)}% · Acoustic ${(avgA*100).toFixed(0)}%. <span style="color:${COLORS.muted};">This fingerprint is uniquely yours.</span>`},
+    {icon:'📊',title:'Taste Consistency',body:`Your energy std dev is <strong style="color:${sdE>0.25?COLORS.orange:COLORS.green}">${(sdE*100).toFixed(1)}%</strong> and mood std dev is <strong style="color:${sdV>0.25?COLORS.orange:COLORS.green}">${(sdV*100).toFixed(1)}%</strong>. ${sdE>0.25?'You listen across the full spectrum.':'You keep a pretty consistent sound.'}`},
+    {icon:'🌟',title:'Most Active Year',body:mostActiveYear?`You added <strong style="color:${COLORS.green}">${mostActiveYear[1]}</strong> songs in <strong>${mostActiveYear[0]}</strong> — your most musical year on record.`:'No timestamp data available.'},
+    {icon:'💿',title:'Artist Loyalty',body:`${singleSongArtists} artists appear just once in your library (${((singleSongArtists/artists.size)*100).toFixed(0)}%). ${singleSongArtists/artists.size>0.5?'You\'re an explorer — always sampling new artists.':'You tend to commit to artists you love.'}`},
+    {icon:'🏛️',title:'Oldest Song',body:oldestSong?`Your oldest track is <strong>${oldestSong['Track Name']}</strong> by ${oldestSong['Artist Name(s)'].split(';')[0]} (${(oldestSong['Release Date']||'').slice(0,4)}).`:'No release date data.'},
+    {icon:'🆕',title:'Newest Release',body:newestSong?`Your most recent release is <strong>${newestSong['Track Name']}</strong> by ${newestSong['Artist Name(s)'].split(';')[0]} (${(newestSong['Release Date']||'').slice(0,4)}).`:'No release date data.'},
+    {icon:'🔬',title:'Genre Breadth',body:`Your library spans <strong style="color:${COLORS.purple}">${genres.size}</strong> genres across <strong style="color:${COLORS.blue}">${artists.size}</strong> artists. ${genres.size>30?'You\'re a genre explorer.':genres.size>15?'You have a wide but focused taste.':'You know what you like and you stick to it.'}`},
+    {icon:'🎵',title:'Songs per Day (avg)',body:`If you spread your library evenly across ${(new Set(songs.map(s=>(s['Added At']||'').slice(0,7))).size)} months of saving, you were adding roughly <strong style="color:${COLORS.green}">${(songs.length/Math.max(1,new Set(songs.map(s=>(s['Added At']||'').slice(0,7))).size)/30).toFixed(1)}</strong> songs per day.`},
+    {icon:'⚡',title:'Energy Archetype',body:avgE>0.75?'You live for <strong style="color:#f87171">high-octane</strong> music — max energy, full volume.':avgE>0.55?'You like your music with <strong style="color:#facc15">solid energy</strong> — not chill, not manic.':avgE>0.35?'You prefer <strong style="color:#38bdf8">mid-energy</strong> vibes — relaxed but engaged.':'Your library is <strong style="color:#2dd4bf">calm and low-energy</strong> — slow and atmospheric.'},
+    {icon:'😌',title:'Emotional Fingerprint',body:avgV>0.65?'Your library skews <strong style="color:#facc15">happy and positive</strong>. You use music to feel good.':avgV>0.45?'You have a <strong style="color:#38bdf8">balanced emotional palette</strong> — music for every mood.':avgV>0.3?'Your taste leans <strong style="color:#a855f7">melancholic</strong>. You find beauty in the darker shades.':'Your library is deeply <strong style="color:#f472b6">introspective</strong> — dark themes, heavy feels.'},
+    {icon:'🚀',title:'Discovery Mindset',body:avgP<50?`Avg popularity is <strong style="color:${COLORS.orange}">${avgP.toFixed(0)}</strong>/100 — you dig deep for underground gems most people haven't heard.`:avgP<70?`Avg popularity is <strong style="color:${COLORS.yellow}">${avgP.toFixed(0)}</strong>/100 — a healthy mix of hidden gems and well-known tracks.`:`Avg popularity is <strong style="color:${COLORS.green}">${avgP.toFixed(0)}</strong>/100 — you ride the mainstream wave.`},
+  ];
+
+  insights.forEach(ins=>{
+    const el=document.createElement('div');
+    el.style.cssText='background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:16px;';
+    el.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:1.2rem;">${ins.icon}</span>
+        <span style="font-family:'Syne',sans-serif;font-size:0.88rem;font-weight:700;">${ins.title}</span>
+      </div>
+      <div style="font-size:0.72rem;color:rgba(240,239,232,0.7);line-height:1.5;">${ins.body}</div>`;
+    container.appendChild(el);
+  });
+}
+
 </script>
 
 </body>
