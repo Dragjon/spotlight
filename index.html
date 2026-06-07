@@ -34,28 +34,43 @@ License: MIT
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'DM Mono', monospace;
     min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
   }
 
   /* ── BACKGROUND CANVAS ── */
   #bg-canvas {
-    position: fixed; inset: 0; z-index: 0;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0;
     pointer-events: none; width: 100%; height: 100%;
+    width: 100vw; height: 100vh; height: 100dvh;
   }
 
   /* ── UPLOAD SCREEN ── */
   #upload-screen {
-    position: fixed; inset: 0; z-index: 100;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 100;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     gap: 0;
     padding: 40px 20px;
     overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   .upload-inner {
@@ -75,10 +90,16 @@ License: MIT
     font-size: clamp(3rem, 8vw, 6rem);
     font-weight: 800;
     letter-spacing: -0.05em;
-    line-height: 1;
+    line-height: 1.1;
+    padding: 4px 2px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent4) 60%, var(--accent3) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
     animation: logoGlow 3s ease-in-out infinite alternate;
+    display: block;
+    overflow: visible;
   }
 
   @keyframes logoGlow {
@@ -1106,45 +1127,57 @@ License: MIT
 
     .hero-divider { padding: 0 14px; }
 
-    /* ── UPLOAD SCREEN — mobile glass card ── */
+    /* ── UPLOAD SCREEN — full screen on mobile ── */
     #upload-screen {
       padding: 0;
       justify-content: flex-end;
-      background: radial-gradient(ellipse at 50% 0%, rgba(29,185,84,0.12) 0%, transparent 65%),
-                  radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.10) 0%, transparent 55%),
+      height: 100vh;
+      height: 100dvh;
+      width: 100vw;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 0%, rgba(29,185,84,0.14) 0%, transparent 60%),
+                  radial-gradient(ellipse at 85% 85%, rgba(168,85,247,0.12) 0%, transparent 55%),
                   var(--bg);
     }
 
     .upload-inner {
       width: 100%;
       max-width: 100%;
-      background: rgba(13,13,22,0.92);
+      /* Fill as much vertical space as needed but cap at 92dvh so it never hides off screen */
+      max-height: 92dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: rgba(13,13,22,0.94);
       backdrop-filter: blur(28px) saturate(1.4);
       -webkit-backdrop-filter: blur(28px) saturate(1.4);
-      border-radius: 32px 32px 0 0;
+      border-radius: 28px 28px 0 0;
       border: 1px solid rgba(255,255,255,0.08);
       border-bottom: none;
-      padding: 36px 22px 48px;
-      gap: 22px;
-      box-shadow: 0 -30px 80px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.06) inset;
+      padding: 20px 20px calc(32px + env(safe-area-inset-bottom, 0px));
+      gap: 18px;
+      box-shadow: 0 -20px 60px rgba(0,0,0,0.5);
+      /* Shrink content so it all fits */
+      flex-shrink: 0;
     }
 
-    /* Pull handle above the sheet */
+    /* Pull handle */
     .upload-inner::before {
       content: '';
       display: block;
-      width: 44px;
+      width: 40px;
       height: 4px;
       border-radius: 99px;
       background: rgba(255,255,255,0.18);
-      margin: 0 auto -12px;
-      position: relative;
-      top: -14px;
+      margin: 0 auto 4px;
     }
 
     .upload-logo {
-      font-size: clamp(2.8rem, 16vw, 4rem);
+      font-size: clamp(2.4rem, 13vw, 3.5rem);
       text-align: center;
+      /* Fix gradient text clipping on mobile WebKit */
+      padding: 4px 8px;
+      overflow: visible;
+      line-height: 1.1;
     }
 
     .upload-tagline {
@@ -1154,8 +1187,8 @@ License: MIT
     }
 
     .drop-zone {
-      padding: 36px 24px;
-      border-radius: 20px;
+      padding: 28px 20px;
+      border-radius: 18px;
       border-style: dashed;
       border-width: 1.5px;
       background: rgba(29,185,84,0.04);
